@@ -3,3 +3,5 @@
 pip install "pip>=8.1"
 
 pip install "uwsgi==$UWSGI"
+
+pip install -U -e tests_requirements.txt
