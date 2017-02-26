@@ -130,7 +130,7 @@ Every registry MUST have link to storage::
 
 
 Use LocalMemoryStorage
-**********************
+++++++++++++++++++++++
 
 Simple storage that store samples to application memory. It can be used with threads.::
 
@@ -140,7 +140,7 @@ Simple storage that store samples to application memory. It can be used with thr
 
 
 Use UWSGIStorage
-****************
+++++++++++++++++
 
 UWSGIStorage allow to use `uwsgi sharedarea`_ to sync metrics between processes.::
 
@@ -162,7 +162,7 @@ EXPORTING
 Library have some helpers to export metrics
 
 To text format
-**************
+++++++++++++++
 
 You can convert registry to text format::
   from pyprometheus import BaseRegistry, LocalMemoryStorage
@@ -178,7 +178,7 @@ You can convert registry to text format::
 
 
 Text file export
-****************
+++++++++++++++++
 
 This is useful for monitoring cronjobs, or for writing cronjobs to expose metrics about a machine system.::
 
