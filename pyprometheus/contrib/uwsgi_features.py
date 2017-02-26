@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from pyprometheus.const import TYPES
 from pyprometheus.metrics import Gauge
 from pyprometheus.storage import BaseStorage
-
+from pyprometheus import compat
 
 try:
     import uwsgi
@@ -140,6 +140,25 @@ class UWSGICollector(object):
              (self._labels + (('type', 'vsz'),), (  (TYPES.GAUGE, metric.name, '', self._labels + (('type', 'vsz'),), uwsgi.mem()[1]),  ))])
 
 
+class MemoryviewWrapper(object):
+    def __init__(self, m):
+        self._m = m.cast('c')
+
+
+    def __getitem__(self, key):
+        if compat.PY3:
+            return self._m[key].cast('c')
+        else:
+            return self._m[key]
+
+    def __setitem__(self, key, value):
+        if compat.PY3:
+            key_memoryview = self._m[key].cast('c')
+            print(key_memoryview)
+            key_memoryview[:] = value
+        else:
+            self._m[key] = value
+
 
 class UWSGIStorage(BaseStorage):
     """A dict of doubles, backend by uwsgi sharedarea
@@ -161,7 +180,7 @@ class UWSGIStorage(BaseStorage):
         self._positions = {}
         self._rlocked = False
         self._wlocked = False
-        self._m = uwsgi.sharedarea_memoryview(self._sharedarea_id)
+        self._m = MemoryviewWrapper(uwsgi.sharedarea_memoryview(self._sharedarea_id))
         self._keys_cache = {}
         self.init_memory()
 
@@ -220,7 +239,6 @@ class UWSGIStorage(BaseStorage):
     def update_area_sign(self):
         self._sign = os.urandom(self.SIGN_SIZE)
         self.m[self.get_slice(self.SIGN_POSITION, self.SIGN_SIZE)] = self._sign
-
 
     def get_area_sign(self):
         """Get current area sign from memory
@@ -318,7 +336,7 @@ class UWSGIStorage(BaseStorage):
         :param size:  int key size in bytes to read
         """
         key_string_bytes = self.m[self.get_slice(position, size)]
-        return struct.unpack(b'{0}s'.format(size), key_string_bytes)[0]
+        return struct.unpack('{0}s'.format(size).encode(), key_string_bytes)[0]
 
     def read_key_value(self, position):
         """Read float value of position

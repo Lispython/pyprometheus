@@ -22,8 +22,7 @@ def project_root():
 def run_around_tests():
     m = uwsgi.sharedarea_memoryview(0)
     for x in xrange(len(m)):
-        m[x] = '\x00'
-
+        m[x] = 0
     yield
 
 @pytest.fixture

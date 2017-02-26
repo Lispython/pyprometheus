@@ -66,7 +66,8 @@ def test_uwsgi_storage():
 
     assert (storage.get_area_size()) == 14
 
-    assert storage.m[15] == '\x00'
+    print(dir(storage.m))
+    assert bytes(storage.m[15]) == b''
 
     with storage.lock():
 
@@ -88,6 +89,12 @@ def test_uwsgi_storage():
     area_sign = storage.get_area_sign()
 
     assert area_sign == storage2.get_area_sign()
+
+    symbol = os.urandom(1)
+    print(">>>", symbol)
+    print(">>>", bytes(symbol))
+    y = storage.m.cast('c')
+    y[storage.SIGN_POSITION + 2] = os.urandom(1)
 
     storage.m[storage.SIGN_POSITION + 2] = os.urandom(1)
 

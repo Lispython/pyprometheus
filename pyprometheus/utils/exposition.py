@@ -33,7 +33,7 @@ def write_to_textfile(registry, path):
 
     tmp_filename = "{0}.{1}.tmp".format(path, os.getpid())
 
-    with open(tmp_filename, 'wb') as f:
+    with open(tmp_filename, 'w') as f:
         f.write(registry_to_text(registry))
 
     os.rename(tmp_filename, path)
