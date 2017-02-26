@@ -1,5 +1,6 @@
+
 Prometheus instrumentation library for Python applications
-============================================================
+==========================================================
 
 The unofficial Python 2 and 3 client for [Prometheus](http://prometheus.io).
 
@@ -205,9 +206,6 @@ Some features that we plan to do:
   - [ ] Add features for async frameworks
   - [ ] Optimize UWSGI storage byte pad
   - [ ] Add quantiles
-
-
-
 
 
 
