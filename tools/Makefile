@@ -3,7 +3,7 @@ clean-containers:
 
 build-images:
 	@echo "Build docker images"
-	docker-compose -f tools/compose-config.yml build --force-rm
+	docker-compose -f tools/compose-config.yml build # --force-rm
 
 
 run-cmd:

@@ -33,14 +33,19 @@ publish: clean-pyc
 	$(DOCKER_RUN_COMMAND) "twine upload dist/*"
 	@echo ""
 
-test:
+test: clean-conteainers
 	@echo "Test application $(version)"
 	$(DOCKER_RUN_COMMAND) "uwsgi --pyrun setup.py --pyargv test --sharedarea=100 --enable-threads"
 	@echo ""
 
-lint:
+tox: clean-containers
+	@echo "Tox test application $(version)"
+	$(DOCKER_RUN_COMMAND) "tox"
+	@echo ""
+
+lint: clean-containers
 	@echo "Linting python files"
 	$(DOCKER_RUN_COMMAND) "PYFLAKES_NODOCTEST=1 flake8 pyprometheus" || exit 1
 	@echo ""
 
-.PHONY: test publish lint help clean-pyc
+.PHONY: test publish lint help clean-pyc tox
