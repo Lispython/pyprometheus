@@ -3,9 +3,7 @@ sudo: false
 
 
 install:
-  install:
   - time ci/setup
-
 
 script:
   - time ci/test
