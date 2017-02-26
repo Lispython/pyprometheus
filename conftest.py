@@ -7,6 +7,10 @@ import uwsgi
 import time
 from pyprometheus.storage import BaseStorage
 from pyprometheus.utils import measure_time as measure_time_manager
+try:
+    xrange = xrange
+except Exception:
+    xrange = range
 
 
 @pytest.fixture

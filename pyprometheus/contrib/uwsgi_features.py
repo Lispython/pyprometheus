@@ -27,6 +27,11 @@ try:
 except ImportError:
     uwsgi = None
 
+try:
+    xrange = xrange
+except Exception:
+    xrange = range
+
 
 class InvalidUWSGISharedareaPagesize(Exception):
     pass

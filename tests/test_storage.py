@@ -4,6 +4,11 @@ from pyprometheus.storage import BaseStorage, LocalMemoryStorage
 import random
 import threading
 
+try:
+    xrange = xrange
+except Exception:
+    xrange = range
+
 DATA = (
     ((2, 'metric_gauge_name', '', (('label1', 'value1'), ('label2', 'value2'))), 5),
     ((3, 'metric_counter_name', '', (('label1', 'value1'), ('label2', 'value2'))), 7),

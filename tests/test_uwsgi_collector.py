@@ -8,6 +8,10 @@ import uwsgi
 from pyprometheus.contrib.uwsgi_features import UWSGICollector, UWSGIStorage
 from pyprometheus.registry import BaseRegistry
 from pyprometheus.utils.exposition import registry_to_text
+try:
+    xrange = xrange
+except Exception:
+    xrange = range
 
 
 def test_uwsgi_collector():
