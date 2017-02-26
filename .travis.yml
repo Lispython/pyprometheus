@@ -17,3 +17,15 @@ matrix:
   include:
     - python: "2.7"
       env: UWSGI="2.0.14"
+
+    - python: "3.3"
+      env: UWSGI="2.0.14"
+
+    - python: "3.4"
+      env: UWSGI="2.0.14"
+
+    - python: "3.5"
+      env: UWSGI="2.0.14"
+
+    - python: "3.6"
+      env: UWSGI="2.0.14"
