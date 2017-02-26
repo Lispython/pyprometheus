@@ -38,6 +38,7 @@ Gauge
 ~~~~~
 
 A gauge is a metric that represents a single numerical value that can arbitrarily go up and down.::
+
    from pyprometheus import Gauge
    from pyprometheus import BaseRegistry, LocalMemoryStorage
 
@@ -54,6 +55,7 @@ Counter
 ~~~~~~~
 
 A counter is a cumulative metric that represents a single numerical value that only ever goes up.::
+
    from pyprometheus import Counter
    from pyprometheus import BaseRegistry, LocalMemoryStorage
 
