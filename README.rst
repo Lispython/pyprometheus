@@ -167,6 +167,8 @@ To text format
 ~~~~~~~~~~~~~~
 
 You can convert registry to text format::
+
+
   from pyprometheus import BaseRegistry, LocalMemoryStorage
   from pyprometheus.utils.exposition import registry_to_text
   from pyprometheus import Gauge
@@ -203,13 +205,10 @@ TODO
 
 Some features that we plan to do:
 
-  - [ ] Add mmap storage
-  - [ ] Add features for async frameworks
-  - [ ] Optimize UWSGI storage byte pad
-  - [ ] Add quantiles
-
-
-
+- [ ] Add mmap storage
+- [ ] Add features for async frameworks
+- [ ] Optimize UWSGI storage byte pad
+- [ ] Add quantiles
 
 
 
