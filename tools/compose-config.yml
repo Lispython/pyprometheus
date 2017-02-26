@@ -1,0 +1,21 @@
+version: "2.0"
+
+services:
+  dev_pyprometheus:
+    image: pypropetheus_dev:latest
+    build:
+      dockerfile: tools/Dockerfile
+      context: ..
+    environment:
+      - PYTHONUNBUFFERED=1
+    command:
+      - "python --version"
+    volumes:
+      - ../:/usr/src/app/
+      - ~/.pypirc:/root/.pypirc
+
+    networks:
+      - default
+
+networks:
+  default:
