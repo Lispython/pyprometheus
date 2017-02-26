@@ -1,7 +1,7 @@
 Prometheus instrumentation library for Python applications
 ============================================================
 
-The unofficial Python 2 and 3 client for [Prometheus](http://prometheus.io).
+The unofficial Python 2 and 3 client for `Prometheus`_.
 
 .. image:: https://travis-ci.org/Lispython/pyprometheus.svg?branch=master
     :target: https://travis-ci.org/Lispython/pyprometheus
@@ -227,3 +227,4 @@ Fork https://github.com/Lispython/pyprometheus/ , create commit and pull request
 .. _`example project`: http://github.com/Lispython/pyprometheus_demo
 .. _`text file collector`: https://github.com/prometheus/node_exporter#textfile-collector
 .. _`uwsgi sharedarea`: http://uwsgi-docs.readthedocs.io/en/latest/SharedArea.html
+.. _`Prometheus`: http://prometheus.io
