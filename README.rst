@@ -3,8 +3,8 @@ Prometheus instrumentation library for Python applications
 
 The unofficial Python 2 and 3 client for [Prometheus](http://prometheus.io).
 
-.. image:: https://secure.travis-ci.org/Lispython/pyprometheus.png
-	   :target: https://secure.travis-ci.org/Lispython/pyprometheus
+.. image:: https://travis-ci.org/Lispython/pyprometheus.svg?branch=master
+    :target: https://travis-ci.org/Lispython/pyprometheus
 
 
 

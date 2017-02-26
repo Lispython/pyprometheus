@@ -1,0 +1,21 @@
+language: python
+sudo: false
+
+
+install:
+  install:
+  - time ci/setup
+
+
+script:
+  - time ci/test
+
+
+notifications:
+  email: false
+
+
+matrix:
+  include:
+    - python: "2.7"
+      env: UWSGI="2.0.14"

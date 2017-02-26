@@ -1,0 +1,4 @@
+#!/bin/bash -e
+
+
+uwsgi --pyrun setup.py --pyargv test --sharedarea=100 --enable-threads

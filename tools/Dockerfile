@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 COPY tests_requirements.txt /tests_requirements.txt
 
 
-RUN pip install -U pip setuptools wheel==0.30.0a0 pyparsing==2.1.10  twine
+RUN pip install -U pip setuptools wheel==0.30.0a0 pyparsing==2.1.10 twine
 RUN pip install -U plop gprof2dot ipython
 
 

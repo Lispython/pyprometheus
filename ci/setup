@@ -1,0 +1,5 @@
+#!/bin/bash -e
+
+pip install "pip>=8.1"
+
+pip install uwsgi==$UWSGI
