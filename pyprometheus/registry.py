@@ -12,6 +12,7 @@ Prometheus instrumentation library for Python applications
 """
 
 
+
 class BaseRegistry(object):
     """Link with metrics collectors
     """

@@ -24,7 +24,8 @@ RUN echo 'eval "$(pyenv init -)"' >> ~/.bash_profile
 
 RUN exec $SHELL
 
-RUN pyenv install 3.2  && \
+RUN pyenv install 2.7 && \
+    pyenv install 3.2  && \
     pyenv install 3.3.0 && \
     pyenv install 3.4.0 && \
     pyenv install 3.5.0 && \
@@ -32,7 +33,7 @@ RUN pyenv install 3.2  && \
     pyenv install 3.7-dev && \
     pyenv install pypy-4.0.1
 
-RUN pyenv local 3.2 3.3.0 3.4.0 3.5.0 3.6.0 3.7-dev pypy-4.0.1
+# RUN pyenv local 2.7 3.2 3.3.0 3.4.0 3.5.0 3.6.0 3.7-dev pypy-4.0.1
 
 RUN pip install -U pip setuptools wheel==0.30.0a0 pyparsing==2.1.10 twine
 RUN pip install -U plop gprof2dot ipython

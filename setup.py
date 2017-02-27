@@ -24,9 +24,8 @@ with open('pyprometheus/__init__.py', 'rb') as f:
     version = str(ast.literal_eval(_version_re.search(
         f.read().decode('utf-8')).groups()[0]))
 
-
 install_require = []
-tests_require = [x.strip() for x in open("tests_requirements.txt").readlines() if x.strip()]
+tests_require = [x.strip() for x in open("tests_requirements.txt").readlines() if (x.strip() and not x.strip().startswith('#'))]
 
 
 def read_description():
@@ -60,7 +59,7 @@ setup(
     author='Alexandr Lispython',
     author_email='lispython@users.noreply.github.com',
     url='https://github.com/Lispython/pyprometheus',
-    description='Prometheus python client (unofficial)',
+    description='Prometheus python client and instrumentation library',
     long_description=read_description(),
     packages=find_packages(exclude=("tests", "tests.*",)),
     zip_safe=False,
