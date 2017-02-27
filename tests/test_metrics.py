@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import pytest
-
+import time
 from pyprometheus.metrics import BaseMetric, Gauge, Counter, Histogram, Summary
 from pyprometheus.registry import BaseRegistry
 from pyprometheus.values import MetricValue
@@ -49,6 +49,10 @@ def test_counter_metric(storage_cls):
     metric_name = "counter_metric_name"
     metric = Counter(metric_name, "counter_metric_name doc", ('label1', 'label2'), registry=registry)
 
+    with pytest.raises(RuntimeError) as exc_info:
+        metric.inc()
+        assert exc_info.value == "You need to use labels"
+
     assert registry.is_registered(metric)
 
     assert repr(metric) == u"<Counter[counter_metric_name]: 0 samples>"
@@ -90,6 +94,10 @@ def test_gauge_metric():
     metric = Gauge(metric_name, metric_name + " doc", ('label1', 'label2'), registry=registry)
     assert registry.is_registered(metric)
 
+    with pytest.raises(RuntimeError) as exc_info:
+        metric.inc(10)
+        assert exc_info.value == "You need to use labels"
+
     assert repr(metric) == "<Gauge[gauge_metric_name]: 0 samples>"
 
     with pytest.raises(RuntimeError) as exc_info:
@@ -119,6 +127,30 @@ def test_gauge_metric():
     assert metric.text_export_header == '\n'.join(["# HELP gauge_metric_name gauge_metric_name doc",
                                                    "# TYPE gauge_metric_name gauge"])
 
+    with metric.labels({'label1': '1', 'label2': '1'}).time():
+
+        time.sleep(1)
+
+    assert metric.labels(label1='1', label2='1').value > 1
+
+    labels = metric.labels({'label1': 'inprogress', 'label2': 'inprogress'})
+
+    with labels.track_in_progress():
+        assert labels.value == 1
+
+    assert labels.value == 0
+
+    assert labels.set_to_current_time() == labels.value
+
+    labels = metric.labels({'label1': 'time2', 'label2': 'time2'})
+
+    @labels.time()
+    def f(*args, **kwargs):
+        time.sleep(1)
+
+    f()
+    assert labels.value > 1
+
 
 @pytest.mark.parametrize("storage_cls", [LocalMemoryStorage, UWSGIStorage])
 def test_summary(storage_cls):
@@ -129,6 +161,10 @@ def test_summary(storage_cls):
     metric = Summary(metric_name, "summary_metric_name doc", ('label1', 'label2'), registry=registry)
 
     assert registry.is_registered(metric)
+
+    with pytest.raises(RuntimeError) as exc_info:
+        metric.observe(10)
+        assert exc_info.value == "You need to use labels"
 
     assert repr(metric) == u"<Summary[summary_metric_name]: 0 samples>"
 
@@ -167,6 +203,29 @@ def test_summary(storage_cls):
     assert metric.text_export_header == '\n'.join(["# HELP summary_metric_name summary_metric_name doc",
                                                    "# TYPE summary_metric_name summary"])
 
+    for x in range(3):
+        with metric.labels({'label1': '1', 'label2': '1'}).time():
+
+            time.sleep(1)
+
+    value = metric.labels(label1='1', label2='1').value
+
+    assert value['sum'].value > 3
+    assert value['count'].value == 3
+
+    labels = metric.labels({'label1': 'time2', 'label2': 'time2'})
+
+    @labels.time()
+    def f(*args, **kwargs):
+        time.sleep(1)
+
+    for x in range(3):
+        f()
+
+    value = labels.value
+    assert value['sum'].value > 3
+    assert value['count'].value == 3
+
 
 @pytest.mark.parametrize("storage_cls", [LocalMemoryStorage, UWSGIStorage])
 def test_histogram(storage_cls):
@@ -175,6 +234,10 @@ def test_histogram(storage_cls):
     registry = BaseRegistry(storage=storage)
     metric_name = "histogram_metric_name"
     metric = Histogram(metric_name, "histogram_metric_name doc", ('label1', 'label2'), registry=registry)
+
+    with pytest.raises(RuntimeError) as exc_info:
+        metric.observe(10)
+        assert exc_info.value == "You need to use labels"
 
     assert repr(metric) == u"<Histogram[histogram_metric_name]: 0 samples>"
 
@@ -215,3 +278,81 @@ def test_histogram(storage_cls):
 
     assert metric.text_export_header == '\n'.join(["# HELP histogram_metric_name histogram_metric_name doc",
                                                    "# TYPE histogram_metric_name histogram"])
+
+    for x in range(3):
+        with metric.labels({'label1': '1', 'label2': '1'}).time():
+
+            time.sleep(1)
+
+    value = metric.labels(label1='1', label2='1').value
+
+    assert value['sum'].value > 3
+    assert value['count'].value == 3
+
+    labels = metric.labels({'label1': 'time2', 'label2': 'time2'})
+
+    @labels.time()
+    def f(*args, **kwargs):
+        time.sleep(1)
+
+    for x in range(3):
+        f()
+
+    value = labels.value
+    assert value['sum'].value > 3
+    assert value['count'].value == 3
+
+
+@pytest.mark.parametrize("storage_cls", [LocalMemoryStorage, UWSGIStorage])
+def test_metric_methods(storage_cls):
+    storage = storage_cls()
+
+    registry = BaseRegistry(storage=storage)
+
+    metric = Gauge("gauge_metric_name", "gauge_metric_name doc", registry=registry)
+
+    metric.inc(2)
+
+    assert metric.value == 2
+
+    metric.dec(1)
+
+    assert metric.value == 1
+
+    assert metric.set(10) == 10
+
+    assert metric.get() == 10
+
+    with metric.time():
+        time.sleep(10)
+
+    assert metric.value > 10
+
+    assert metric.set_to_current_time() == metric.value
+
+    metric = Counter("counter_metric_name", "counter_metric_name doc", registry=registry)
+    metric.inc(11)
+
+    assert metric.value == 11
+
+    assert metric.get() == 11
+
+    metric = Summary("summary_metric_name", "summary_metric_name doc", registry=registry)
+
+    for x in range(3):
+        with metric.time():
+
+            time.sleep(1)
+
+    assert metric.value['sum'].value > 3
+    assert metric.value['count'].value == 3
+
+    metric = Histogram("histogram_metric_name", "histogram_metric_name doc", registry=registry)
+
+    for x in range(3):
+        with metric.time():
+
+            time.sleep(1)
+
+    assert metric.value['sum'].value > 3
+    assert metric.value['count'].value == 3

@@ -18,7 +18,6 @@ from pyprometheus.values import (MetricValue, GaugeValue,
                                  CounterValue, SummaryValue,
                                  HistogramValue)
 
-
 class BaseMetric(object):
 
     value_class = MetricValue
@@ -26,6 +25,8 @@ class BaseMetric(object):
     NOT_ALLOWED_LABELS = set()
 
     TYPE = "untyped"
+
+    PARENT_METHODS = set()
 
     def __init__(self, name, doc, labels=[], registry=None):
         self._name = name
@@ -45,7 +46,7 @@ class BaseMetric(object):
         return u"<{0}[{1}]: {2} samples>".format(self.__class__.__name__, self._name, len(self._samples))
 
     def get_proxy(self):
-        if self._labelsnames:
+        if self._labelnames:
             raise RuntimeError("You need to use labels")
         return self.value_class(self, label_values={})
 
@@ -123,15 +124,27 @@ class BaseMetric(object):
         return self._samples.values()
 
 
+    def __getattr__(self, name):
+        if name in self.PARENT_METHODS:
+            return getattr(self.get_proxy(), name)
+
+        raise AttributeError
+        # return super(BaseMetric, self).__getattr__(name)
+
+
+
+
+
+
 class Gauge(BaseMetric):
 
     TYPE = "gauge"
 
     value_class = GaugeValue
 
-    inc = property(BaseMetric.get_proxy)
-    dec = property(BaseMetric.get_proxy)
-    set = property(BaseMetric.get_proxy)
+    PARENT_METHODS = set(('inc', 'dec', 'set', 'get', 'track_inprogress',
+                      'set_to_current_time', 'time', 'value'))
+
 
 
 class Counter(BaseMetric):
@@ -139,7 +152,7 @@ class Counter(BaseMetric):
 
     value_class = CounterValue
 
-    inc = property(BaseMetric.get_proxy)
+    PARENT_METHODS = set(('inc', 'get', 'value'))
 
 
 class Summary(BaseMetric):
@@ -151,11 +164,11 @@ class Summary(BaseMetric):
 
     NOT_ALLOWED_LABELS = set('quantile')
 
+    PARENT_METHODS = set(('observe', 'value', 'time'))
+
     def __init__(self, name, doc, labels=[], quantiles=False, registry=None):
         self._quantiles = list(sorted(quantiles)) if quantiles else []
         super(Summary, self).__init__(name, doc, labels, registry)
-
-    observe = property(BaseMetric.get_proxy)
 
     @property
     def quantiles(self):
@@ -193,11 +206,11 @@ class Histogram(BaseMetric):
 
     value_class = HistogramValue
 
+    PARENT_METHODS = set(('observe', 'value', 'time'))
+
     def __init__(self, name, doc, labels=[], buckets=DEFAULT_BUCKETS, registry=None):
         self._buckets = list(sorted(buckets)) if buckets else []
         super(Histogram, self).__init__(name, doc, labels, registry)
-
-    observe = property(BaseMetric.get_proxy)
 
     @property
     def buckets(self):

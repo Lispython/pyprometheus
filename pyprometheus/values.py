@@ -15,7 +15,7 @@ Prometheus instrumentation library for Python applications
 import time
 
 from pyprometheus.const import TYPES
-
+from pyprometheus.managers import TimerManager, InprogressTrackerManager, GaugeTimerManager
 
 class MetricValue(object):
     """Base metric collector
@@ -109,15 +109,25 @@ class GaugeValue(MetricValue):
 
     TYPE = TYPES.GAUGE
 
-    def dec(self, amount):
+    def dec(self, amount=1):
         self.inc(-amount)
 
     def set(self, value):
         self._metric._storage.write_value(self.key, value)
+        return value
 
     @property
     def value(self):
         return self.get()
+
+    def track_in_progress(self):
+        return InprogressTrackerManager(self)
+
+    def set_to_current_time(self):
+        return self.set(time.time())
+
+    def time(self):
+        return GaugeTimerManager(self)
 
 
 class CounterValue(MetricValue):
@@ -231,6 +241,9 @@ class SummaryValue(MetricValue):
         return "\n".join([self._sum.export_str, self._count.export_str] + [quantile.export_str for quantile in self._quantiles])
 
 
+    def time(self):
+        return TimerManager(self)
+
 
 class HistogramCountValue(SummaryCountValue):
     TYPE = TYPES.HISTOGRAM_COUNTER
@@ -319,3 +332,7 @@ class HistogramValue(MetricValue):
     @property
     def export_str(self):
         return "\n".join([self._sum.export_str, self._count.export_str] + [bucket.export_str for bucket in self._buckets])
+
+
+    def time(self):
+        return TimerManager(self)

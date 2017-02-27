@@ -24,11 +24,11 @@ INSTALLATION
 
 To use pyprometheus use pip or easy_install:
 
-`pip install pyprometheus`
+:code:`pip install pyprometheus`
 
 or
 
-`easy_install pyprometheus`
+:code:`easy_install pyprometheus`
 
 
 HOW TO INSTRUMENTING CODE
@@ -44,11 +44,29 @@ A gauge is a metric that represents a single numerical value that can arbitraril
 
    storage = LocalMemoryStorage()
    registry = CollectorRegistry(storage=storage)
-   job_in_progress = Gauge("job_in_progress", "Description", registry=registry)
+   gauge = Gauge("job_in_progress", "Description", registry=registry)
 
-   job_in_progress.inc(10)
-   job_in_progress.dec(5)
-   job_in_progress.set(21.1)
+   gauge.inc(10)
+   gauge.dec(5)
+   gauge.set(21.1)
+
+
+utilities::
+
+  gauge.set_to_current_time()   # Set to current unixtime
+
+  # Increment when entered, decrement when exited.
+  @gauge.track_in_progress()
+  def f():
+      pass
+
+  with gauge.track_in_progress():
+      pass
+
+
+  with gauge.time():
+      time.sleep(10)
+
 
 
 Counter
@@ -61,9 +79,12 @@ A counter is a cumulative metric that represents a single numerical value that o
 
    storage = LocalMemoryStorage()
    registry = CollectorRegistry(storage=storage)
-   requests_total = Counter("requests_total", "Description", registry=registry)
+   counter = Counter("requests_total", "Description", registry=registry)
 
-   requests_total.inc(10)
+   counter.inc(10)
+
+
+
 
 
 Summary
@@ -81,6 +102,17 @@ Similar to a histogram, a summary samples observations (usually things like requ
    s.observe(0.100)
 
 
+utilities for timing code::
+
+   @gauge.time()
+   def func():
+      time.sleep(10)
+
+   with gauge.time():
+      time.sleep(10)
+
+
+
 Histogram
 ~~~~~~~~~
 
@@ -91,9 +123,19 @@ A histogram samples observations (usually things like request durations or respo
 
    storage = LocalMemoryStorage()
    registry = CollectorRegistry(storage=storage)
-   h = Histogram("requests_duration_seconds", "Description", registry=registry)
+   histogram = Histogram("requests_duration_seconds", "Description", registry=registry)
 
-   h.observe(1.1)
+   histogram.observe(1.1)
+
+utilities for timing code::
+
+   @histogram.time()
+   def func():
+      time.sleep(10)
+
+   with histogram.time():
+      time.sleep(10)
+
 
 
 Labels

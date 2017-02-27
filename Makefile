@@ -33,7 +33,7 @@ publish: clean-pyc
 	$(DOCKER_RUN_COMMAND) "twine upload dist/*"
 	@echo ""
 
-test: clean-conteainers
+test: clean-containers
 	@echo "Test application $(version)"
 	$(DOCKER_RUN_COMMAND) "uwsgi --pyrun setup.py --pyargv test --sharedarea=100 --enable-threads"
 	@echo ""
