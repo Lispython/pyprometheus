@@ -36,8 +36,7 @@ TYPES = Types()
 CONTENT_TYPE = 'text/plain; version=0.0.4; charset=utf-8'
 
 
-CREDITS = """
-# Python client for prometheus.io
+CREDITS = """# Python client for prometheus.io
 # http://github.com/Lispython/pyprometheus
 # Generated at {dt}
 """

@@ -24,6 +24,7 @@ def registry_to_text(registry):
         output.append(collector.text_export_header)
         for sample in samples:
             output.append(sample.export_str)
+    output.append('')
     return '\n'.join(output)
 
 

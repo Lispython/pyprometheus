@@ -2,3 +2,4 @@ include setup.py README.rst MANIFEST.in LICENSE *.txt
 recursive-include pyprometheus/ *
 graft tests
 global-exclude *~
+global-exclude #*#

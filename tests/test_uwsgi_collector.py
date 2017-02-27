@@ -21,13 +21,19 @@ def test_uwsgi_collector():
     registry.register(uwsgi_collector)
 
     collectors = dict([(x.name, x) for x in registry.collect()])
-    assert len(registry_to_text(registry).split('\n')) == 63
+
+    metrics_count = sorted(map(lambda x: x.split(' ')[2],
+                           filter(lambda x: x.startswith('# HELP'), [x for x in registry_to_text(registry).split('\n')])))
+
+    assert len(metrics_count) == len(set(metrics_count))
+
+    assert len(registry_to_text(registry).split('\n')) == 60
 
     assert collectors['uwsgi_namespace:buffer_size_bytes'].get_samples()[0].value == uwsgi.buffer_size
     assert collectors['uwsgi_namespace:processes_total'].get_samples()[0].value == uwsgi.numproc
     assert collectors['uwsgi_namespace:requests_total'].get_samples()[0].value == uwsgi.total_requests()
 
-    for name in ['requests', 'respawn_count', 'running_time', 'exceptions', 'requests', 'delta_requests']:
+    for name in ['requests', 'respawn_count', 'running_time', 'exceptions', 'delta_requests']:
         assert collectors['uwsgi_namespace:process:{0}'.format(name)].get_samples()[0].value == uwsgi.workers()[0][name]
 
     assert uwsgi_collector.metric_name("test") == "uwsgi_namespace:test"
