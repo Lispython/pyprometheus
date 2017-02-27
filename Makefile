@@ -21,6 +21,10 @@ clean-pyc:
 	find . -name '*~' -exec rm -f {} +
 	find . -name "__pycache__" -exec rm -rf {} +
 
+clean-dist:
+	rm -rf dist/*
+	rm -rf build/*
+
 help:
 	@echo "Available commands:"
 	@sed -n '/^[a-zA-Z0-9_.]*:/s/:.*//p' <Makefile | sort
@@ -29,7 +33,7 @@ help:
 release:
 	git tag -f v$(version) && git push origin v$(version)
 
-publish: clean-pyc
+publish: clean-pyc clean-dist
 	@echo "Create release $(version) and upload to pypi"
 
 	$(DOCKER_RUN_COMMAND) "python setup.py sdist bdist_wheel"

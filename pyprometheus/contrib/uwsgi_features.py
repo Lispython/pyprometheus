@@ -102,25 +102,34 @@ class UWSGICollector(object):
 
         yield self.get_memory_samples()
 
-        for worker in uwsgi.workers():
-            for sample in self.get_worker_sample(worker):
-                yield sample
+        for x in self.get_workers_samples(uwsgi.workers()):
+            yield x
 
-    def get_worker_sample(self, worker):
+
+    def get_workers_samples(self, workers):
         """Read worker stats and create samples
 
         :param worker: worker stats
         """
         for name in ['requests', 'respawn_count', 'running_time',
-                     'exceptions', 'requests', 'delta_requests',
+                     'exceptions', 'delta_requests',
                      'rss', 'vsz', 'last_spawn', 'tx', 'avg_rt', 'signals']:
             metric = self._collectors["process:" + name]
-            yield metric.build_samples([(self._labels + (('id', worker['id']),), (  (TYPES.GAUGE, metric.name, '', self._labels + (('id', worker['id']),), worker[name]),  ))])
+
+            for worker in workers:
+                labels = self._labels + (('id', worker['id']),)
+                metric.add_sample(labels, metric.build_sample(labels,
+                                  (  (TYPES.GAUGE, metric.name, '', self._labels + (('id', worker['id']),), worker[name]),  )))
+
+            yield metric
 
         metric = self._collectors["process:status"]
-        yield metric.build_samples([(self._labels + (('id', worker['id']), ('status', worker['status'])),
-                                        (  (TYPES.GAUGE, metric.name, '', self._labels + (('id', worker['id']), ('status', worker['status'])), 1),  ))])
+        for worker in workers:
+            labels = self._labels + (('id', worker['id']), ('status', worker['status']))
+            metric.add_sample(labels, metric.build_sample(labels,
+                                (  (TYPES.GAUGE, metric.name, '', self._labels + (('id', worker['id']), ('status', worker['status'])), 1),  )))
 
+        yield metric
 
     def get_sample(self, name, value):
         """Create sample for given name and value

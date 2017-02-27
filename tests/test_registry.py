@@ -124,3 +124,8 @@ def test_base_registry(storage_cls, measure_time):
                 assert test1 == test2
             else:
                 assert test1.split()[:-1] == test2.split()[:-1]
+
+    metrics_count = map(lambda x: x.split(' ')[2],
+                        filter(lambda x: x.startswith('# HELP'), [x for x in registry_to_text(registry).split('\n')]))
+
+    assert len(metrics_count) == len(set(metrics_count))
