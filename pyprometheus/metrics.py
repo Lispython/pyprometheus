@@ -11,13 +11,10 @@ Prometheus instrumentation library for Python applications
 :github: http://github.com/Lispython/pyprometheus
 """
 
-
-
 from pyprometheus.const import TYPES
 from pyprometheus.values import (MetricValue, GaugeValue,
                                  CounterValue, SummaryValue,
                                  HistogramValue)
-
 class BaseMetric(object):
 
     value_class = MetricValue
@@ -132,10 +129,6 @@ class BaseMetric(object):
         # return super(BaseMetric, self).__getattr__(name)
 
 
-
-
-
-
 class Gauge(BaseMetric):
 
     TYPE = "gauge"
@@ -144,7 +137,6 @@ class Gauge(BaseMetric):
 
     PARENT_METHODS = set(('inc', 'dec', 'set', 'get', 'track_inprogress',
                       'set_to_current_time', 'time', 'value'))
-
 
 
 class Counter(BaseMetric):
