@@ -11,13 +11,10 @@ Prometheus instrumentation library for Python applications
 :github: http://github.com/Lispython/pyprometheus
 """
 
-
-
 from pyprometheus.const import TYPES
 from pyprometheus.values import (MetricValue, GaugeValue,
                                  CounterValue, SummaryValue,
                                  HistogramValue)
-
 class BaseMetric(object):
 
     value_class = MetricValue
@@ -94,7 +91,7 @@ class BaseMetric(object):
         # HELP go_gc_duration_seconds A summary of the GC invocation durations.
         # TYPE go_gc_duration_seconds summary
         """
-        return '\n'.join(["# HELP {name} {doc}",
+        return "\n".join(["# HELP {name} {doc}",
                           "# TYPE {name} {metric_type}"]).format(
                           name=self.name,
                           doc=self.doc,
@@ -103,7 +100,7 @@ class BaseMetric(object):
     def build_samples(self, items):
         """Build samples from objects
 
-        [((2, 'metric_gauge_name', '', (('label1', 'value3'), ('label2', 'value4'))), 5.0)]
+        [((2, "metric_gauge_name", "", (("label1", "value3"), ("label2", "value4"))), 5.0)]
         """
         for label_values, data in items:
             self.add_sample(label_values, self.build_sample(label_values, data))
@@ -132,19 +129,14 @@ class BaseMetric(object):
         # return super(BaseMetric, self).__getattr__(name)
 
 
-
-
-
-
 class Gauge(BaseMetric):
 
     TYPE = "gauge"
 
     value_class = GaugeValue
 
-    PARENT_METHODS = set(('inc', 'dec', 'set', 'get', 'track_inprogress',
-                      'set_to_current_time', 'time', 'value'))
-
+    PARENT_METHODS = set(("inc", "dec", "set", "get", "track_inprogress",
+                        "set_to_current_time", "time", "value"))
 
 
 class Counter(BaseMetric):
@@ -152,7 +144,7 @@ class Counter(BaseMetric):
 
     value_class = CounterValue
 
-    PARENT_METHODS = set(('inc', 'get', 'value'))
+    PARENT_METHODS = set(("inc", "get", "value"))
 
 
 class Summary(BaseMetric):
@@ -162,9 +154,9 @@ class Summary(BaseMetric):
 
     value_class = SummaryValue
 
-    NOT_ALLOWED_LABELS = set('quantile')
+    NOT_ALLOWED_LABELS = set("quantile")
 
-    PARENT_METHODS = set(('observe', 'value', 'time'))
+    PARENT_METHODS = set(("observe", "value", "time"))
 
     def __init__(self, name, doc, labels=[], quantiles=False, registry=None):
         self._quantiles = list(sorted(quantiles)) if quantiles else []
@@ -176,21 +168,21 @@ class Summary(BaseMetric):
 
     def build_sample(self, label_values, data):
         subtypes = {
-            'sum': None,
-            'count': None,
-            'quantiles': [] if isinstance(self._quantiles, (list, tuple)) else None
+            "sum": None,
+            "count": None,
+            "quantiles": [] if isinstance(self._quantiles, (list, tuple)) else None
         }
 
         for meta, value in data:
             value_class = self.value_class.SUBTYPES[meta[2]]
 
             if meta[0] == TYPES.SUMMARY_SUM:
-                subtypes['sum'] = value_class(self, label_values=label_values, value=value)
+                subtypes["sum"] = value_class(self, label_values=label_values, value=value)
             elif meta[0] == TYPES.SUMMARY_COUNTER:
-                subtypes['count'] = value_class(self, label_values=label_values, value=value)
+                subtypes["count"] = value_class(self, label_values=label_values, value=value)
             elif meta[0] == TYPES.SUMMARY_QUANTILE:
-                quantile = dict(meta[3])['quantile']
-                subtypes['quantiles'].append(
+                quantile = dict(meta[3])["quantile"]
+                subtypes["quantiles"].append(
                     value_class(self, label_values=label_values, quantile=quantile, value=value))
 
         return self.value_class(self, label_values=label_values, value=subtypes)
@@ -200,13 +192,13 @@ class Histogram(BaseMetric):
     TYPE = "histogram"
 
     DEFAULT_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5,
-                       0.75, 1.0, 2.5, 5.0, 7.5, 10.0, float('inf'))
+                       0.75, 1.0, 2.5, 5.0, 7.5, 10.0, float("inf"))
 
-    NOT_ALLOWED_LABELS = set('le')
+    NOT_ALLOWED_LABELS = set("le")
 
     value_class = HistogramValue
 
-    PARENT_METHODS = set(('observe', 'value', 'time'))
+    PARENT_METHODS = set(("observe", "value", "time"))
 
     def __init__(self, name, doc, labels=[], buckets=DEFAULT_BUCKETS, registry=None):
         self._buckets = list(sorted(buckets)) if buckets else []
@@ -219,21 +211,21 @@ class Histogram(BaseMetric):
 
     def build_sample(self, label_values, data):
         subtypes = {
-            'sum': None,
-            'count': None,
-            'buckets': [] if isinstance(self._buckets, (list, tuple)) else None
+            "sum": None,
+            "count": None,
+            "buckets": [] if isinstance(self._buckets, (list, tuple)) else None
         }
 
         for meta, value in data:
             value_class = self.value_class.SUBTYPES[meta[2]]
 
             if meta[0] == TYPES.HISTOGRAM_SUM:
-                subtypes['sum'] = value_class(self, label_values=label_values, value=value)
+                subtypes["sum"] = value_class(self, label_values=label_values, value=value)
             elif meta[0] == TYPES.HISTOGRAM_COUNTER:
-                subtypes['count'] = value_class(self, label_values=label_values, value=value)
+                subtypes["count"] = value_class(self, label_values=label_values, value=value)
             elif meta[0] == TYPES.HISTOGRAM_BUCKET:
-                bucket = dict(meta[3])['bucket']
-                subtypes['buckets'].append(
+                bucket = dict(meta[3])["bucket"]
+                subtypes["buckets"].append(
                     value_class(self, label_values=label_values, bucket=bucket, value=value))
 
         return self.value_class(self, label_values=label_values, value=subtypes)

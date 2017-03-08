@@ -14,6 +14,7 @@ Features
 - Four types of metric are supported: Counter, Gauge, Summary(without quantiles) and Histogram.
 - InMemoryStorage (do not use it for multiprocessing apps)
 - UWSGI storage - share metrics between processes
+- UWAGI flush storage - sync metrics with uwsgi sharedarea by flush call
 - time decorator
 - time context manager
 

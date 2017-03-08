@@ -83,10 +83,8 @@ class BaseStorage(object):
 class LocalMemoryStorage(BaseStorage):
 
     def __init__(self):
-        self._storage = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
         self._storage = defaultdict(float)
         self._lock = Lock()
-
 
     def inc_value(self, key, value):
         with self._lock:

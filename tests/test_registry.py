@@ -53,7 +53,7 @@ def test_base_registry(storage_cls, measure_time):
     name_template = "metric_{0}_name"
     doc_template = "doc_{0}"
     metrics = {}
-    labels = ('label1', 'label2')
+    labels = ("label1", "label2")
     labelnames = ("value1", "value2")
 
     for metric_class in [
@@ -70,7 +70,7 @@ def test_base_registry(storage_cls, measure_time):
         name_template.format(Histogram.TYPE),
         doc_template.format(Histogram.TYPE),
         labels,
-        buckets=(0.005, 0.01, 7.5, float('inf')),
+        buckets=(0.005, 0.01, 7.5, float("inf")),
         registry=registry
     )
 
@@ -93,18 +93,18 @@ def test_base_registry(storage_cls, measure_time):
 
     labels_dict = dict(zip(labels, labelnames))
 
-    metrics['gauge'].labels(**labels_dict).inc(5)
-    metrics['counter'].labels(**labels_dict).inc(7)
-    metrics['summary'].labels(**labels_dict).observe(4)
-    metrics['histogram'].labels(**labels_dict).observe(6)
+    metrics["gauge"].labels(**labels_dict).inc(5)
+    metrics["counter"].labels(**labels_dict).inc(7)
+    metrics["summary"].labels(**labels_dict).observe(4)
+    metrics["histogram"].labels(**labels_dict).observe(6)
 
     labelnames2 = ("value3", "value4")
     labels_dict2 = dict(zip(labels, labelnames2))
 
-    metrics['gauge'].labels(**labels_dict2).inc(5)
-    metrics['counter'].labels(**labels_dict2).inc(7)
-    metrics['summary'].labels(**labels_dict2).observe(4)
-    metrics['histogram'].labels(**labels_dict2).observe(6)
+    metrics["gauge"].labels(**labels_dict2).inc(5)
+    metrics["counter"].labels(**labels_dict2).inc(7)
+    metrics["summary"].labels(**labels_dict2).observe(4)
+    metrics["histogram"].labels(**labels_dict2).observe(6)
 
     assert len(list(registry.get_samples())) == 5
 
@@ -120,12 +120,12 @@ def test_base_registry(storage_cls, measure_time):
     with measure_time("registry to text"):
 
         for test1, test2 in zip(registry_to_text(registry).split("\n")[4:], lines[4:]):
-            if test1.startswith('#'):
+            if test1.startswith("#"):
                 assert test1 == test2
             else:
                 assert test1.split()[:-1] == test2.split()[:-1]
 
-    metrics_count = map(lambda x: x.split(' ')[2],
-                        filter(lambda x: x.startswith('# HELP'), [x for x in registry_to_text(registry).split('\n')]))
+    metrics_count = map(lambda x: x.split(" ")[2],
+                        filter(lambda x: x.startswith("# HELP"), [x for x in registry_to_text(registry).split("\n")]))
 
     assert len(metrics_count) == len(set(metrics_count))
