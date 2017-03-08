@@ -19,7 +19,7 @@ import copy
 from contextlib import contextmanager
 from logging import getLogger
 from pyprometheus.const import TYPES
-from pyprometheus.metrics import Gauge
+from pyprometheus.metrics import Gauge, Counter
 from pyprometheus.storage import BaseStorage, LocalMemoryStorage
 
 
@@ -37,7 +37,7 @@ except Exception:
 class InvalidUWSGISharedareaPagesize(Exception):
     pass
 
-logger = getLogger('pyprometheus.uwsgi_features')
+logger = getLogger("pyprometheus.uwsgi_features")
 
 
 class UWSGICollector(object):
@@ -122,7 +122,7 @@ class UWSGICollector(object):
             for worker in workers:
                 labels = self._labels + (("id", worker["id"]),)
                 metric.add_sample(labels, metric.build_sample(labels,
-                                  (  (TYPES.GAUGE, metric.name, "", self._labels + (("id", worker["id"]),), worker[name]),  )))
+                                  (  (TYPES.GAUGE, metric.name, "", labels, worker[name]),  )))
 
             yield metric
 
@@ -163,7 +163,7 @@ class UWSGIStorage(BaseStorage):
     SIGN_POSITION = 4
     AREA_SIZE_POSITION = 0
 
-    def __init__(self, sharedarea_id=SHAREDAREA_ID):
+    def __init__(self, sharedarea_id=SHAREDAREA_ID, namespace="", stats=False, labels={}):
         self._sharedarea_id = sharedarea_id
         self._used = None
         # Changed every time then keys added
@@ -171,9 +171,56 @@ class UWSGIStorage(BaseStorage):
         self._positions = {}
         self._rlocked = False
         self._wlocked = False
-        self._m = uwsgi.sharedarea_memoryview(self._sharedarea_id)
         self._keys_cache = {}
+        self._namespace = namespace
+        self._stats = stats
+        self._labels = tuple(sorted(labels.items(), key=lambda x: x[0]))
+
+        self._m = uwsgi.sharedarea_memoryview(self._sharedarea_id)
+
         self.init_memory()
+
+        self._collectors = self.declare_metrics()
+
+    @property
+    def uid(self):
+        return "uwsgi-storage:{0}".format(self._namespace)
+
+    @property
+    def text_export_header(self):
+        return "# {0} stats metrics".format(self.__class__.__name__)
+
+    def metric_name(self, name):
+        """Make metric name with namespace
+
+        :param name:
+        """
+        return ":".join([self._namespace, name])
+
+    def declare_metrics(self):
+        return {
+            "memory_sync": Counter(self.metric_name("memory_read"), "UWSGI shared memory syncs", ("sharedarea", ) + self._labels),
+            "memory_size": Gauge(self.metric_name("memory_size"), "UWSGI shared memory size", ("sharedarea", ) + self._labels),
+            "num_keys": Gauge(self.metric_name("num_keys"), "UWSGI num_keys", ("sharedarea", ) + self._labels)
+        }
+
+    def collect(self):
+        labels = self._labels + (("sharedarea", self._sharedarea_id), )
+        # metric = self._collectors["memory_sync"]
+        # metric.add_sample(labels, metric.build_sample(labels, (   (TYPES.GAUGE, metric.name, "", labels, ) ))
+
+        # yield metric
+        metric = self._collectors["memory_size"]
+
+        metric.add_sample(labels, metric.build_sample(labels, (   (TYPES.GAUGE, metric.name, "", labels, self.get_area_size()), )))
+
+        yield metric
+
+        metric = self._collectors["num_keys"]
+        metric.add_sample(labels, metric.build_sample(labels, (   (TYPES.GAUGE, metric.name, "", labels, len(self._positions)), )))
+
+        yield metric
+
 
     @property
     def m(self):
@@ -262,7 +309,6 @@ class UWSGIStorage(BaseStorage):
         self._used = self.get_area_size()
         self._sign = self.get_area_sign()
         self._positions.clear()
-
 
         while pos < self._used + self.AREA_SIZE_POSITION:
 

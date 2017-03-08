@@ -20,7 +20,7 @@ def test_uwsgi_collector():
 
     registry.register(uwsgi_collector)
 
-    collectors = dict([(x.name, x) for x in registry.collect()])
+    collectors = {x.name: x for x in registry.collect()}
 
     metrics_count = sorted(map(lambda x: x.split(" ")[2],
                            filter(lambda x: x.startswith("# HELP"), [x for x in registry_to_text(registry).split("\n")])))
@@ -154,7 +154,8 @@ def test_uwsgi_storage():
         assert storage2.get_value(x[0]) == x[1]
 
 
-def test_multiprocessing(measure_time, iterations):
+def test_multiprocessing(measure_time, iterations, num_workers):
+
     storage = UWSGIStorage(0)
     storage2 = UWSGIStorage(0)
     storage3 = UWSGIStorage(0)
@@ -177,7 +178,7 @@ def test_multiprocessing(measure_time, iterations):
                     storage3.inc_value(x[0], x[1])
 
         workers = []
-        for _ in xrange(10):
+        for _ in xrange(num_workers):
             func = random.choice([f1, f2, f3])
             p = Process(target=func)
             p.start()
@@ -215,12 +216,12 @@ def test_uwsgi_flush_storage():
         storage1.persistent_storage.get_value(x[0]) == x[1] * 10
 
 
-def test_uwsgi_flush_storage_multiprocessing(measure_time, iterations):
+def test_uwsgi_flush_storage_multiprocessing(measure_time, iterations, num_workers):
     storage = UWSGIFlushStorage(0)
     storage2 = UWSGIFlushStorage(0)
     storage3 = UWSGIFlushStorage(0)
     ITERATIONS = iterations
-    with measure_time("flush storage multiprocessing writes") as mt:
+    with measure_time("flush storage multiprocessing writes {0}".format(ITERATIONS)) as mt:
         def f1():
             for _ in xrange(ITERATIONS):
                 for x in DATA:
@@ -243,7 +244,7 @@ def test_uwsgi_flush_storage_multiprocessing(measure_time, iterations):
                 storage3.flush()
 
         workers = []
-        for _ in xrange(5):
+        for _ in xrange(num_workers):
             func = random.choice([f1, f2, f3])
             p = Process(target=func)
             p.start()
@@ -266,3 +267,23 @@ def test_uwsgi_flush_storage_multiprocessing(measure_time, iterations):
             assert storage2.persistent_storage.get_value(x[0]) == storage.persistent_storage.get_value(x[0]) == storage3.persistent_storage.get_value(x[0])
 
             assert storage.persistent_storage.get_value(x[0]) == x[1] * ITERATIONS * len(workers)
+
+
+def test_uwsgi_storage_metrics(iterations):
+    registry = BaseRegistry()
+
+    storage = UWSGIStorage(0, namespace="namespace", stats=True)
+
+    registry.register(storage)
+
+    for x in xrange(iterations):
+        for k, v in DATA:
+            storage.inc_value(k, v)
+
+    collectors = {x.name: x for x in registry.collect()}
+
+    metric = collectors["namespace:memory_size"]
+    assert metric.get_samples()[0].value == storage.get_area_size()
+
+    metric = collectors["namespace:num_keys"]
+    assert metric.get_samples()[0].value == 20

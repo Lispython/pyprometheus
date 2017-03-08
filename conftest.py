@@ -35,3 +35,8 @@ def measure_time():
 @pytest.fixture()
 def iterations():
     return 500
+
+
+@pytest.fixture()
+def num_workers():
+    return 10

@@ -100,7 +100,7 @@ def test_local_memory_storage():
     assert len(items) == 4
 
 
-def test_local_storage_threading(measure_time, iterations):
+def test_local_storage_threading(measure_time, iterations, num_workers):
     storage = LocalMemoryStorage()
 
     ITERATIONS = iterations
@@ -122,7 +122,7 @@ def test_local_storage_threading(measure_time, iterations):
                     storage.inc_value(x[0], x[1])
 
         workers = []
-        for _ in xrange(10):
+        for _ in xrange(num_workers):
             func = random.choice([f1, f2, f3])
             t = threading.Thread(target=func)
 
