@@ -1,3 +1,8 @@
+Version 0.0.6
+-------------
+
+* [BUGFIX] Fixed `UWSGIFlushStorage` init
+
 Version 0.0.5
 -------------
 
