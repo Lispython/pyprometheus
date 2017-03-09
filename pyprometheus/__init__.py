@@ -12,17 +12,17 @@ Prometheus instrumentation library for Python applications
 """
 
 
-__all__ = ('__version__', '__version_info__', '__maintainer__',
-           'Counter', 'Gauge', 'Summary', 'Histogram', 'BaseStorage',
-           'LocalMemoryStorage')
+__all__ = ("__version__", "__version_info__", "__maintainer__",
+           "Counter", "Gauge", "Summary", "Histogram", "BaseStorage",
+           "LocalMemoryStorage")
 
 __license__ = "BSD, see LICENSE for more details"
 
-__version__ = '0.0.4'
+__version__ = "0.0.5"
 
-__version_info__ = list(map(int, __version__.split('.')))
+__version_info__ = list(map(int, __version__.split(".")))
 
 __maintainer__ = "Alexandr Lispython"
 
-from pyprometheus.metrics import Counter, Gauge, Summary, Histogram
-from pyprometheus.storage import BaseStorage, LocalMemoryStorage
+from pyprometheus.metrics import Counter, Gauge, Summary, Histogram # noqa
+from pyprometheus.storage import BaseStorage, LocalMemoryStorage # noqa

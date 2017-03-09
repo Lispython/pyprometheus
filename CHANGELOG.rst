@@ -1,3 +1,9 @@
+Version 0.0.5
+-------------
+
+* [FEATURE] Added `UWSGIFlushStorage`
+* [FEATURE] Added `UWSGIStorage` metrics
+
 Version 0.0.4
 -------------
 
