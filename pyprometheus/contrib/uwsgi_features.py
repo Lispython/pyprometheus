@@ -15,11 +15,12 @@ import marshal
 import os
 import struct
 import uuid
+import copy
 from contextlib import contextmanager
-
+from logging import getLogger
 from pyprometheus.const import TYPES
-from pyprometheus.metrics import Gauge
-from pyprometheus.storage import BaseStorage
+from pyprometheus.metrics import Gauge, Counter
+from pyprometheus.storage import BaseStorage, LocalMemoryStorage
 
 
 try:
@@ -36,13 +37,15 @@ except Exception:
 class InvalidUWSGISharedareaPagesize(Exception):
     pass
 
+logger = getLogger("pyprometheus.uwsgi_features")
+
 
 class UWSGICollector(object):
     """Grap UWSGI stats and export to prometheus
     """
     def __init__(self, namespace, labels={}):
         self._namespace = namespace
-        self._labels =tuple(sorted(labels.items(), key=lambda x: x[0]))
+        self._labels = tuple(sorted(labels.items(), key=lambda x: x[0]))
         self._collectors = self.declare_metrics()
 
     @property
@@ -64,40 +67,40 @@ class UWSGICollector(object):
 
         :param name:
         """
-        return ':'.join([self._namespace, name])
+        return ":".join([self._namespace, name])
 
     def declare_metrics(self):
         return {
-            'memory': Gauge(self.metric_name("uwsgi_memory_bytes"), "UWSGI memory usage in bytes", ('type',) + self._labels),
-            'processes': Gauge(self.metric_name("processes_total"), "Number of UWSGI processes", self._labels),
-            'worker_status': Gauge(self.metric_name("worker_status_totla"), "Current workers status", self._labels),
-            'total_requests': Gauge(self.metric_name("requests_total"), "Total processed request", self._labels),
-            'buffer_size': Gauge(self.metric_name("buffer_size_bytes"), "UWSGI buffer size in bytes", self._labels),
-            'started_on': Gauge(self.metric_name("started_on"), "UWSGI started on timestamp", self._labels),
-            'cores': Gauge(self.metric_name("cores"), "system cores", self._labels),
+            "memory": Gauge(self.metric_name("uwsgi_memory_bytes"), "UWSGI memory usage in bytes", ("type",) + self._labels),
+            "processes": Gauge(self.metric_name("processes_total"), "Number of UWSGI processes", self._labels),
+            "worker_status": Gauge(self.metric_name("worker_status_totla"), "Current workers status", self._labels),
+            "total_requests": Gauge(self.metric_name("requests_total"), "Total processed request", self._labels),
+            "buffer_size": Gauge(self.metric_name("buffer_size_bytes"), "UWSGI buffer size in bytes", self._labels),
+            "started_on": Gauge(self.metric_name("started_on"), "UWSGI started on timestamp", self._labels),
+            "cores": Gauge(self.metric_name("cores"), "system cores", self._labels),
 
 
-            'process:respawn_count': Gauge(self.metric_name("process:respawn_count"), "Process respawn count", ('id', ) + self._labels),
-            'process:last_spawn': Gauge(self.metric_name("process:last_spawn"), "Process last spawn", ('id', ) + self._labels),
-            'process:signals': Gauge(self.metric_name("process:signals"), "Process signals total", ('id', ) + self._labels),
-            'process:avg_rt': Gauge(self.metric_name("process:avg_rt"), "Process average response time", ('id', ) + self._labels),
-            'process:tx': Gauge(self.metric_name("process:tx"), "Process transmitted data", ('id',) + self._labels),
+            "process:respawn_count": Gauge(self.metric_name("process:respawn_count"), "Process respawn count", ("id", ) + self._labels),
+            "process:last_spawn": Gauge(self.metric_name("process:last_spawn"), "Process last spawn", ("id", ) + self._labels),
+            "process:signals": Gauge(self.metric_name("process:signals"), "Process signals total", ("id", ) + self._labels),
+            "process:avg_rt": Gauge(self.metric_name("process:avg_rt"), "Process average response time", ("id", ) + self._labels),
+            "process:tx": Gauge(self.metric_name("process:tx"), "Process transmitted data", ("id",) + self._labels),
 
-            'process:status': Gauge(self.metric_name("process:status"), "Process status", ('id', 'status') + self._labels),
-            'process:running_time': Gauge(self.metric_name("process:running_time"), "Process running time", ('id', ) + self._labels),
-            'process:exceptions': Gauge(self.metric_name("process:exceptions"), "Process exceptions", ('id', ) + self._labels),
-            'process:requests': Gauge(self.metric_name("process:requests"), "Process requests", ('id', ) + self._labels),
-            'process:delta_requests': Gauge(self.metric_name("process:delta_requests"), "Process delta_requests", ('id', ) + self._labels),
-            'process:rss': Gauge(self.metric_name("process:rss"), "Process rss memory", ('id', ) + self._labels),
-            'process:vsz': Gauge(self.metric_name("process:vzs"), "Process vsz address space", ('id', ) + self._labels),
+            "process:status": Gauge(self.metric_name("process:status"), "Process status", ("id", "status") + self._labels),
+            "process:running_time": Gauge(self.metric_name("process:running_time"), "Process running time", ("id", ) + self._labels),
+            "process:exceptions": Gauge(self.metric_name("process:exceptions"), "Process exceptions", ("id", ) + self._labels),
+            "process:requests": Gauge(self.metric_name("process:requests"), "Process requests", ("id", ) + self._labels),
+            "process:delta_requests": Gauge(self.metric_name("process:delta_requests"), "Process delta_requests", ("id", ) + self._labels),
+            "process:rss": Gauge(self.metric_name("process:rss"), "Process rss memory", ("id", ) + self._labels),
+            "process:vsz": Gauge(self.metric_name("process:vzs"), "Process vsz address space", ("id", ) + self._labels),
         }
 
     def collect(self):
-        for name, value in [('processes', uwsgi.numproc),
-                            ('total_requests', uwsgi.total_requests()),
-                            ('buffer_size', uwsgi.buffer_size),
-                            ('started_on', uwsgi.started_on),
-                            ('cores', uwsgi.cores)]:
+        for name, value in [("processes", uwsgi.numproc),
+                            ("total_requests", uwsgi.total_requests()),
+                            ("buffer_size", uwsgi.buffer_size),
+                            ("started_on", uwsgi.started_on),
+                            ("cores", uwsgi.cores)]:
             yield self.get_sample(name, value)
 
         yield self.get_memory_samples()
@@ -111,23 +114,23 @@ class UWSGICollector(object):
 
         :param worker: worker stats
         """
-        for name in ['requests', 'respawn_count', 'running_time',
-                     'exceptions', 'delta_requests',
-                     'rss', 'vsz', 'last_spawn', 'tx', 'avg_rt', 'signals']:
+        for name in ["requests", "respawn_count", "running_time",
+                     "exceptions", "delta_requests",
+                     "rss", "vsz", "last_spawn", "tx", "avg_rt", "signals"]:
             metric = self._collectors["process:" + name]
 
             for worker in workers:
-                labels = self._labels + (('id', worker['id']),)
+                labels = self._labels + (("id", worker["id"]),)
                 metric.add_sample(labels, metric.build_sample(labels,
-                                  (  (TYPES.GAUGE, metric.name, '', self._labels + (('id', worker['id']),), worker[name]),  )))
+                                  (  (TYPES.GAUGE, metric.name, "", labels, worker[name]),  )))
 
             yield metric
 
         metric = self._collectors["process:status"]
         for worker in workers:
-            labels = self._labels + (('id', worker['id']), ('status', worker['status']))
+            labels = self._labels + (("id", worker["id"]), ("status", worker["status"]))
             metric.add_sample(labels, metric.build_sample(labels,
-                                (  (TYPES.GAUGE, metric.name, '', self._labels + (('id', worker['id']), ('status', worker['status'])), 1),  )))
+                                (  (TYPES.GAUGE, metric.name, "", self._labels + (("id", worker["id"]), ("status", worker["status"])), 1),  )))
 
         yield metric
 
@@ -138,23 +141,21 @@ class UWSGICollector(object):
         :param value:
         """
         metric = self._collectors[name]
-        return metric.build_samples([(self._labels, (  (TYPES.GAUGE, metric.name, '', self._labels, float(value)),  ))])
+        return metric.build_samples([(self._labels, (  (TYPES.GAUGE, metric.name, "", self._labels, float(value)),  ))])
 
     def get_memory_samples(self):
         """Get memory usage samples
         """
-        metric = self._collectors['memory']
+        metric = self._collectors["memory"]
         return metric.build_samples(
-            [(self._labels + (('type', 'rss'),), (  (TYPES.GAUGE, metric.name, '', self._labels + (('type', 'rss'),), uwsgi.mem()[0]),  )),
-             (self._labels + (('type', 'vsz'),), (  (TYPES.GAUGE, metric.name, '', self._labels + (('type', 'vsz'),), uwsgi.mem()[1]),  ))])
-
+            [(self._labels + (("type", "rss"),), (  (TYPES.GAUGE, metric.name, "", self._labels + (("type", "rss"),), uwsgi.mem()[0]),  )),
+             (self._labels + (("type", "vsz"),), (  (TYPES.GAUGE, metric.name, "", self._labels + (("type", "vsz"),), uwsgi.mem()[1]),  ))])
 
 
 class UWSGIStorage(BaseStorage):
-    """A dict of doubles, backend by uwsgi sharedarea
-    """
+    """A dict of doubles, backend by uwsgi sharedarea"""
 
-    SHAREDAREA_ID = int(os.environ.get('PROMETHEUS_UWSGI_SHAREDAREA', 0))
+    SHAREDAREA_ID = int(os.environ.get("PROMETHEUS_UWSGI_SHAREDAREA", 0))
     KEY_SIZE_SIZE = 4
     KEY_VALUE_SIZE = 8
     SIGN_SIZE = 10
@@ -162,7 +163,7 @@ class UWSGIStorage(BaseStorage):
     SIGN_POSITION = 4
     AREA_SIZE_POSITION = 0
 
-    def __init__(self, sharedarea_id=SHAREDAREA_ID):
+    def __init__(self, sharedarea_id=SHAREDAREA_ID, namespace="", stats=False, labels={}):
         self._sharedarea_id = sharedarea_id
         self._used = None
         # Changed every time then keys added
@@ -170,9 +171,56 @@ class UWSGIStorage(BaseStorage):
         self._positions = {}
         self._rlocked = False
         self._wlocked = False
-        self._m = uwsgi.sharedarea_memoryview(self._sharedarea_id)
         self._keys_cache = {}
+        self._namespace = namespace
+        self._stats = stats
+        self._labels = tuple(sorted(labels.items(), key=lambda x: x[0]))
+
+        self._m = uwsgi.sharedarea_memoryview(self._sharedarea_id)
+
         self.init_memory()
+
+        self._collectors = self.declare_metrics()
+
+    @property
+    def uid(self):
+        return "uwsgi-storage:{0}".format(self._namespace)
+
+    @property
+    def text_export_header(self):
+        return "# {0} stats metrics".format(self.__class__.__name__)
+
+    def metric_name(self, name):
+        """Make metric name with namespace
+
+        :param name:
+        """
+        return ":".join([self._namespace, name])
+
+    def declare_metrics(self):
+        return {
+            "memory_sync": Counter(self.metric_name("memory_read"), "UWSGI shared memory syncs", ("sharedarea", ) + self._labels),
+            "memory_size": Gauge(self.metric_name("memory_size"), "UWSGI shared memory size", ("sharedarea", ) + self._labels),
+            "num_keys": Gauge(self.metric_name("num_keys"), "UWSGI num_keys", ("sharedarea", ) + self._labels)
+        }
+
+    def collect(self):
+        labels = self._labels + (("sharedarea", self._sharedarea_id), )
+        # metric = self._collectors["memory_sync"]
+        # metric.add_sample(labels, metric.build_sample(labels, (   (TYPES.GAUGE, metric.name, "", labels, ) ))
+
+        # yield metric
+        metric = self._collectors["memory_size"]
+
+        metric.add_sample(labels, metric.build_sample(labels, (   (TYPES.GAUGE, metric.name, "", labels, self.get_area_size()), )))
+
+        yield metric
+
+        metric = self._collectors["num_keys"]
+        metric.add_sample(labels, metric.build_sample(labels, (   (TYPES.GAUGE, metric.name, "", labels, len(self._positions)), )))
+
+        yield metric
+
 
     @property
     def m(self):
@@ -216,14 +264,14 @@ class UWSGIStorage(BaseStorage):
     def get_area_size(self):
         """Read area size from uwsgi
         """
-        return struct.unpack(b'i', self.m[self.get_slice(self.AREA_SIZE_POSITION, self.AREA_SIZE_SIZE)])[0]
+        return struct.unpack(b"i", self.m[self.get_slice(self.AREA_SIZE_POSITION, self.AREA_SIZE_SIZE)])[0]
 
     def init_area_size(self):
         return self.update_area_size(self.AREA_SIZE_SIZE)
 
     def update_area_size(self, size):
         self._used = size
-        self.m[self.get_slice(self.AREA_SIZE_POSITION, self.AREA_SIZE_SIZE)] = struct.pack(b'i', size)
+        self.m[self.get_slice(self.AREA_SIZE_POSITION, self.AREA_SIZE_SIZE)] = struct.pack(b"i", size)
         return True
 
     def update_area_sign(self):
@@ -262,7 +310,6 @@ class UWSGIStorage(BaseStorage):
         self._sign = self.get_area_sign()
         self._positions.clear()
 
-
         while pos < self._used + self.AREA_SIZE_POSITION:
 
             key_size, (key, key_value), positions = self.read_item(pos)
@@ -298,7 +345,7 @@ class UWSGIStorage(BaseStorage):
 
 
     def get_binary_string(self, key, value):
-        item_template = '=i{0}sd'.format(len(key)).encode()
+        item_template = "=i{0}sd".format(len(key)).encode()
 
         return struct.pack(item_template, len(key), key, value)
 
@@ -327,7 +374,7 @@ class UWSGIStorage(BaseStorage):
         :param size:  int key size in bytes to read
         """
         key_string_bytes = self.m[self.get_slice(position, size)]
-        return struct.unpack(b'{0}s'.format(size), key_string_bytes)[0]
+        return struct.unpack(b"{0}s".format(size), key_string_bytes)[0]
 
     def read_key_value(self, position):
         """Read float value of position
@@ -335,7 +382,7 @@ class UWSGIStorage(BaseStorage):
         :param position: int offset for key value float
         """
         key_value_bytes = self.m[self.get_slice(position, self.KEY_VALUE_SIZE)]
-        return struct.unpack(b'd', key_value_bytes)[0]
+        return struct.unpack(b"d", key_value_bytes)[0]
 
     def read_key_size(self, position):
         """Read key size from position
@@ -343,14 +390,14 @@ class UWSGIStorage(BaseStorage):
         :param position: int offset for 4-byte key size
         """
         key_size_bytes = self.m[self.get_slice(position, self.KEY_SIZE_SIZE)]
-        return struct.unpack(b'i', key_size_bytes)[0]
+        return struct.unpack(b"i", key_size_bytes)[0]
 
     def write_key_value(self, position, value):
         """Write float value to position
 
         :param position: int offset for 8-byte float value
         """
-        self.m[self.get_slice(position, self.KEY_VALUE_SIZE)] = struct.pack(b'd', value)
+        self.m[self.get_slice(position, self.KEY_VALUE_SIZE)] = struct.pack(b"d", value)
         return value
 
     def read_item(self, position):
@@ -367,7 +414,7 @@ class UWSGIStorage(BaseStorage):
 
         key = self.read_key_string(key_string_position, key_size)
 
-        key_value_position = key_string_position + key_size# + self.get_string_padding(key)
+        key_value_position = key_string_position + key_size  # + self.get_string_padding(key)
 
         key_value = self.read_key_value(key_value_position)
         return (key_size,
@@ -470,19 +517,73 @@ class UWSGIStorage(BaseStorage):
         self._wlocked, self._rlocked = False, False
         uwsgi.sharedarea_unlock(self._sharedarea_id)
 
-
     def __len__(self):
         return len(self._positions)
 
     def clear(self):
         for x in xrange(self.AREA_SIZE_SIZE + self.AREA_SIZE_SIZE):
-            self.m[x] = '\x00'
+            self.m[x] = "\x00"
 
         self._positions.clear()
-
 
     def get_items(self):
         self.validate_actuality()
 
         for key, position in self._positions.items():
             yield self.unserialize_key(key), self.read_key_value(position[2])
+
+    def inc_items(self, items):
+        self.validate_actuality()
+        with self.lock():
+            for key, value in items:
+                try:
+                    positions, created = self.get_key_position(self.serialize_key(key), value)
+                    if created:
+                        continue
+                    self.write_key_value(positions[2], self.read_key_value(positions[2]) + value)
+                except InvalidUWSGISharedareaPagesize:
+                    logger.error("Invalid sharedarea pagesize {0} bytes".format(len(self._m)))
+
+    def write_items(self, items):
+        self.validate_actuality()
+        with self.lock():
+            for key, value in items:
+                try:
+                    positions, created = self.get_key_position(self.serialize_key(key), value)
+                    if created:
+                        continue
+                    self.write_key_value(positions[2], value)
+                except InvalidUWSGISharedareaPagesize:
+                    logger.error("Invalid sharedarea pagesize {0} bytes".format(len(self._m)))
+
+
+class UWSGIFlushStorage(LocalMemoryStorage):
+    """Storage wrapper for UWSGI storage that update couters inmemory and flush into uwsgi sharedarea
+    """
+    SHAREDAREA_ID = int(os.environ.get("PROMETHEUS_UWSGI_SHAREDAREA", 0))
+
+    def __init__(self, sharedarea_id=UWSGIStorage.SHAREDAREA_ID):
+        self._uwsgi_storage = UWSGIStorage(sharedarea_id)
+        self._flush = 0
+        self._get_items = 0
+        self._clear = 0
+        super(UWSGIFlushStorage, self).__init__()
+
+    @property
+    def persistent_storage(self):
+        return self._uwsgi_storage
+
+    def flush(self):
+        items = list(super(UWSGIFlushStorage, self).get_items())
+        self._uwsgi_storage.inc_items(items)
+        super(UWSGIFlushStorage, self).clear()
+
+    def get_items(self):
+        return self._uwsgi_storage.get_items()
+
+    def __len__(self):
+        return super(UWSGIFlushStorage, self).__len__()
+
+    def clear(self):
+        self._uwsgi_storage.clear()
+        super(UWSGIFlushStorage, self).clear()

@@ -10,26 +10,26 @@ except Exception:
     xrange = range
 
 DATA = (
-    ((2, 'metric_gauge_name', '', (('label1', 'value1'), ('label2', 'value2'))), 5),
-    ((3, 'metric_counter_name', '', (('label1', 'value1'), ('label2', 'value2'))), 7),
-    ((5, 'metric_summary_name', '_sum', (('label1', 'value1'), ('label2', 'value2'))), 4),
-    ((7, 'metric_summary_name', '_count', (('label1', 'value1'), ('label2', 'value2'))), 1),
-    ((11, 'metric_histogram_name', '_sum', (('label1', 'value1'), ('label2', 'value2'))), 6),
-    ((12, 'metric_histogram_name', '_count', (('label1', 'value1'), ('label2', 'value2'))), 1),
-    ((13, 'metric_histogram_name', '_bucket', (('bucket', 0.005), ('label1', 'value1'), ('label2', 'value2'))), 0),
-    ((13, 'metric_histogram_name', '_bucket', (('bucket', 0.01), ('label1', 'value1'), ('label2', 'value2'))), 0),
-    ((13, 'metric_histogram_name', '_bucket', (('bucket', 7.5), ('label1', 'value1'), ('label2', 'value2'))), 1),
-    ((13, 'metric_histogram_name', '_bucket', (('bucket', float('inf')), ('label1', 'value1'), ('label2', 'value2'))), 1),
-    ((2, 'metric_gauge_name', '', (('label1', 'value3'), ('label2', 'value4'))), 5),
-    ((3, 'metric_counter_name', '', (('label1', 'value3'), ('label2', 'value4'))), 7),
-    ((5, 'metric_summary_name', '_sum', (('label1', 'value3'), ('label2', 'value4'))), 4),
-    ((7, 'metric_summary_name', '_count', (('label1', 'value3'), ('label2', 'value4'))), 1),
-    ((11, 'metric_histogram_name', '_sum', (('label1', 'value3'), ('label2', 'value4'))), 6),
-    ((12, 'metric_histogram_name', '_count', (('label1', 'value3'), ('label2', 'value4'))), 1),
-    ((13, 'metric_histogram_name', '_bucket', (('bucket', 0.005), ('label1', 'value3'), ('label2', 'value4'))), 0),
-    ((13, 'metric_histogram_name', '_bucket', (('bucket', 0.01), ('label1', 'value3'), ('label2', 'value4'))), 0),
-    ((13, 'metric_histogram_name', '_bucket', (('bucket', 7.5), ('label1', 'value3'), ('label2', 'value4'))), 1),
-    ((13, 'metric_histogram_name', '_bucket', (('bucket', float('inf')), ('label1', 'value3'), ('label2', 'value4'))), 1))
+    ((2, "metric_gauge_name", "", (("label1", "value1"), ("label2", "value2"))), 5),
+    ((3, "metric_counter_name", "", (("label1", "value1"), ("label2", "value2"))), 7),
+    ((5, "metric_summary_name", "_sum", (("label1", "value1"), ("label2", "value2"))), 4),
+    ((7, "metric_summary_name", "_count", (("label1", "value1"), ("label2", "value2"))), 1),
+    ((11, "metric_histogram_name", "_sum", (("label1", "value1"), ("label2", "value2"))), 6),
+    ((12, "metric_histogram_name", "_count", (("label1", "value1"), ("label2", "value2"))), 1),
+    ((13, "metric_histogram_name", "_bucket", (("bucket", 0.005), ("label1", "value1"), ("label2", "value2"))), 0),
+    ((13, "metric_histogram_name", "_bucket", (("bucket", 0.01), ("label1", "value1"), ("label2", "value2"))), 0),
+    ((13, "metric_histogram_name", "_bucket", (("bucket", 7.5), ("label1", "value1"), ("label2", "value2"))), 1),
+    ((13, "metric_histogram_name", "_bucket", (("bucket", float("inf")), ("label1", "value1"), ("label2", "value2"))), 1),
+    ((2, "metric_gauge_name", "", (("label1", "value3"), ("label2", "value4"))), 5),
+    ((3, "metric_counter_name", "", (("label1", "value3"), ("label2", "value4"))), 7),
+    ((5, "metric_summary_name", "_sum", (("label1", "value3"), ("label2", "value4"))), 4),
+    ((7, "metric_summary_name", "_count", (("label1", "value3"), ("label2", "value4"))), 1),
+    ((11, "metric_histogram_name", "_sum", (("label1", "value3"), ("label2", "value4"))), 6),
+    ((12, "metric_histogram_name", "_count", (("label1", "value3"), ("label2", "value4"))), 1),
+    ((13, "metric_histogram_name", "_bucket", (("bucket", 0.005), ("label1", "value3"), ("label2", "value4"))), 0),
+    ((13, "metric_histogram_name", "_bucket", (("bucket", 0.01), ("label1", "value3"), ("label2", "value4"))), 0),
+    ((13, "metric_histogram_name", "_bucket", (("bucket", 7.5), ("label1", "value3"), ("label2", "value4"))), 1),
+    ((13, "metric_histogram_name", "_bucket", (("bucket", float("inf")), ("label1", "value3"), ("label2", "value4"))), 1))
 
 
 def test_base_storage():
@@ -44,16 +44,16 @@ def test_local_memory_storage():
     assert len(storage) == 0
 
     key1 = (1,
-            'metric_name1',
-            '',
-            (('key1', 'value1'),
-             ('key2', 'value2')))
+            "metric_name1",
+            "",
+            (("key1", "value1"),
+             ("key2", "value2")))
 
     key2 = (1,
-            'metric_name2',
-            '',
-            (('key1', 'value1'),
-             ('key2', 'value2')))
+            "metric_name2",
+            "",
+            (("key1", "value1"),
+             ("key2", "value2")))
 
     storage.inc_value(key1, 1)
     assert storage.get_value(key1) == 1.0
@@ -80,18 +80,18 @@ def test_local_memory_storage():
 
     for name, labels in items:
 
-        if name == 'metric_counter_name':
+        if name == "metric_counter_name":
             for label, label_data in labels:
                 assert len(label_data) == 1
-        if name == 'metric_gauge_name':
+        if name == "metric_gauge_name":
             for label, label_data in labels:
                 assert len(label_data) == 1
 
-        if name == 'metric_histogram_name':
+        if name == "metric_histogram_name":
             for label, label_data in labels:
                 assert len(label_data) == 6
 
-        if name == 'metric_summary_name':
+        if name == "metric_summary_name":
             for label, label_data in labels:
                 assert len(label_data) == 2
 
@@ -100,10 +100,10 @@ def test_local_memory_storage():
     assert len(items) == 4
 
 
-def test_local_storage_threading(measure_time):
+def test_local_storage_threading(measure_time, iterations, num_workers):
     storage = LocalMemoryStorage()
 
-    ITERATIONS = 500
+    ITERATIONS = iterations
 
     with measure_time("threading writes") as mt:
         def f1():
@@ -122,7 +122,7 @@ def test_local_storage_threading(measure_time):
                     storage.inc_value(x[0], x[1])
 
         workers = []
-        for _ in xrange(10):
+        for _ in xrange(num_workers):
             func = random.choice([f1, f2, f3])
             t = threading.Thread(target=func)
 

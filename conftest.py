@@ -22,10 +22,21 @@ def project_root():
 def run_around_tests():
     m = uwsgi.sharedarea_memoryview(0)
     for x in xrange(len(m)):
-        m[x] = '\x00'
+        m[x] = "\x00"
 
     yield
+
 
 @pytest.fixture
 def measure_time():
     return measure_time_manager
+
+
+@pytest.fixture()
+def iterations():
+    return 500
+
+
+@pytest.fixture()
+def num_workers():
+    return 10

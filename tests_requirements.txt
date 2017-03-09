@@ -2,8 +2,11 @@ flake8==3.2.1
 tox==2.3.2
 #tox-pyenv==2.3.2
 
+
+ipdb
+uwsgi==2.0.14
 pytest==3.0.6
 pytest-cov==2.4.0
 pytest-flake8==0.8.1
-ipdb
-uwsgi==2.0.14
+flake8-quotes==0.9.0
+flake8-comprehensions==1.2.1
