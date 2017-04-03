@@ -176,6 +176,8 @@ class UWSGIStorage(BaseStorage):
         self._stats = stats
         self._labels = tuple(sorted(labels.items(), key=lambda x: x[0]))
 
+        self._syncs = 0
+
         self._m = uwsgi.sharedarea_memoryview(self._sharedarea_id)
 
         self.init_memory()
@@ -197,17 +199,33 @@ class UWSGIStorage(BaseStorage):
         """
         return ":".join([self._namespace, name])
 
+
+    @staticmethod
+    def get_unique_id():
+        try:
+            return uwsgi.worker_id()
+        except Exception:
+            try:
+                return uwsgi.mule_id()
+            except Exception:
+                return os.getpid()
+        return "unknown"
+
     def declare_metrics(self):
         return {
-            "memory_sync": Counter(self.metric_name("memory_read"), "UWSGI shared memory syncs", ("sharedarea", ) + self._labels),
+            "memory_sync": Counter(self.metric_name("memory_read"), "UWSGI shared memory syncs", ("sharedarea", "id") + self._labels),
             "memory_size": Gauge(self.metric_name("memory_size"), "UWSGI shared memory size", ("sharedarea", ) + self._labels),
             "num_keys": Gauge(self.metric_name("num_keys"), "UWSGI num_keys", ("sharedarea", ) + self._labels)
         }
 
     def collect(self):
+        labels = self._labels + (("sharedarea", self._sharedarea_id), ("id", self.get_unique_id()))
+        metric = self._collectors["memory_sync"]
+        metric.add_sample(labels, metric.build_sample(labels, (   (TYPES.GAUGE, metric.name, "", labels, self._syncs), )))
+
+        yield metric
+
         labels = self._labels + (("sharedarea", self._sharedarea_id), )
-        # metric = self._collectors["memory_sync"]
-        # metric.add_sample(labels, metric.build_sample(labels, (   (TYPES.GAUGE, metric.name, "", labels, ) ))
 
         # yield metric
         metric = self._collectors["memory_size"]
@@ -252,6 +270,8 @@ class UWSGIStorage(BaseStorage):
             return val
 
     def unserialize_key(self, serialized_key):
+        if not serialized_key:
+            raise RuntimeError("Invalid serialized key")
         return marshal.loads(serialized_key)
 
     def get_area_size_with_lock(self):
@@ -319,7 +339,7 @@ class UWSGIStorage(BaseStorage):
     def load_exists_positions(self):
         """Load all keys from memory
         """
-
+        self._syncs += 1
         self._used = self.get_area_size()
         self._sign = self.get_area_sign()
 
@@ -375,6 +395,7 @@ class UWSGIStorage(BaseStorage):
         """
         key_string_bytes = self.m[self.get_slice(position, size)]
         return struct.unpack(b"{0}s".format(size), key_string_bytes)[0]
+
 
     def read_key_value(self, position):
         """Read float value of position
@@ -444,6 +465,9 @@ class UWSGIStorage(BaseStorage):
             except InvalidUWSGISharedareaPagesize as e:
                 logger.error("Invalid sharedarea pagesize {0} bytes".format(len(self._m)))
                 return 0
+            except Exception as e:
+                logger.error(e, exc_info=True)
+                return 0
 
     def write_value(self, key, value):
         """Write value to shared memory
@@ -461,6 +485,9 @@ class UWSGIStorage(BaseStorage):
             except InvalidUWSGISharedareaPagesize as e:
                 logger.error("Invalid sharedarea pagesize {0} bytes".format(len(self._m)))
                 return None
+            except Exception as e:
+                logger.error(e, exc_info=True)
+                return 0
 
     def get_value(self, key):
         """Read value from shared memory
@@ -473,6 +500,9 @@ class UWSGIStorage(BaseStorage):
                 return self.read_key_value(self.get_key_position(self.serialize_key(key))[0][2])
             except InvalidUWSGISharedareaPagesize:
                 logger.error("Invalid sharedarea pagesize {0} bytes".format(len(self._m)))
+                return 0
+            except Exception as e:
+                logger.error(e, exc_info=True)
                 return 0
 
     @property
@@ -495,7 +525,10 @@ class UWSGIStorage(BaseStorage):
         if not self.wlocked and not self.rlocked:
             self.wlocked, self.rlocked = lock_id, lock_id
             uwsgi.sharedarea_wlock(self._sharedarea_id)
-            yield
+            try:
+                yield
+            except Exception as e:
+                logger.error(e, exc_info=True)
             uwsgi.sharedarea_unlock(self._sharedarea_id)
             self.wlocked, self.rlocked = False, False
         else:
@@ -507,7 +540,10 @@ class UWSGIStorage(BaseStorage):
         if not self.rlocked:
             self.rlocked = lock_id
             uwsgi.sharedarea_rlock(self._sharedarea_id)
-            yield
+            try:
+                yield
+            except Exception as e:
+                logger.error(e, exc_info=True)
             uwsgi.sharedarea_unlock(self._sharedarea_id)
             self.rlocked = False
         else:
@@ -527,14 +563,17 @@ class UWSGIStorage(BaseStorage):
         self._positions.clear()
 
     def get_items(self):
-        self.validate_actuality()
+        with self.rlock():
+            self.validate_actuality()
 
         for key, position in self._positions.items():
             yield self.unserialize_key(key), self.read_key_value(position[2])
 
     def inc_items(self, items):
-        self.validate_actuality()
+
         with self.lock():
+            self.validate_actuality()
+
             for key, value in items:
                 try:
                     positions, created = self.get_key_position(self.serialize_key(key), value)
@@ -543,10 +582,15 @@ class UWSGIStorage(BaseStorage):
                     self.write_key_value(positions[2], self.read_key_value(positions[2]) + value)
                 except InvalidUWSGISharedareaPagesize:
                     logger.error("Invalid sharedarea pagesize {0} bytes".format(len(self._m)))
+                except Exception as e:
+                    logger.error(e, exc_info=True)
+                    return 0
 
     def write_items(self, items):
-        self.validate_actuality()
+
         with self.lock():
+            self.validate_actuality()
+
             for key, value in items:
                 try:
                     positions, created = self.get_key_position(self.serialize_key(key), value)
@@ -555,6 +599,9 @@ class UWSGIStorage(BaseStorage):
                     self.write_key_value(positions[2], value)
                 except InvalidUWSGISharedareaPagesize:
                     logger.error("Invalid sharedarea pagesize {0} bytes".format(len(self._m)))
+                except Exception as e:
+                    logger.error(e, exc_info=True)
+                    return 0
 
 
 class UWSGIFlushStorage(LocalMemoryStorage):
