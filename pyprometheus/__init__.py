@@ -18,7 +18,7 @@ __all__ = ("__version__", "__version_info__", "__maintainer__",
 
 __license__ = "BSD, see LICENSE for more details"
 
-__version__ = "0.0.6"
+__version__ = "0.0.7"
 
 __version_info__ = list(map(int, __version__.split(".")))
 
