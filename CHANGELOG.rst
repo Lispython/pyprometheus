@@ -1,3 +1,9 @@
+Version 0.0.7
+-------------
+
+* [BUGFIX] Fixed `UWSGIStorage` memory corruptions
+
+
 Version 0.0.6
 -------------
 
