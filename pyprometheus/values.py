@@ -13,6 +13,7 @@ Prometheus instrumentation library for Python applications
 
 import time
 
+from pyprometheus.utils import escape_str
 from pyprometheus.const import TYPES
 from pyprometheus.managers import TimerManager, InprogressTrackerManager, GaugeTimerManager
 
@@ -76,12 +77,12 @@ class MetricValue(object):
 
     @property
     def value(self):
-        raise RuntimeError("Metric value")
+        return self.get()
 
     @property
     def export_str(self):
         return "{name}{postfix}{{{labels}}} {value} {timestamp}".format(
-            name=self._metric.name, postfix=self.POSTFIX,
+            name=escape_str(self._metric.name), postfix=self.POSTFIX,
             labels=self.export_labels, timestamp=int(time.time() * 1000), value=float(self.value))
 
     @property
@@ -92,7 +93,7 @@ class MetricValue(object):
     def format_export_label(self, label):
         if label == "bucket":
             return "le"
-        return label
+        return escape_str(label)
 
     def format_export_value(self, value):
         if value == float("inf"):
@@ -101,7 +102,7 @@ class MetricValue(object):
             return "-Inf"
         # elif math.isnan(value):
         #     return "NaN"
-        return value
+        return escape_str(str(value))
 
 
 class GaugeValue(MetricValue):
