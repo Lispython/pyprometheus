@@ -1,3 +1,8 @@
+Version 0.0.8
+-------------
+
+* [BUGFIX] Fixed escaping for export formats
+
 Version 0.0.7
 -------------
 
