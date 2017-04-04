@@ -23,8 +23,12 @@ def import_storage(path):
         return sys.modules[path]
 
 
+def escape_str(value):
+    return value.replace("\\", r"\\").replace("\n", r"\n").replace("\"", r"\"")
+
+
 def format_binary(value):
-    return ':'.join("{0}>{1}".format(i, x.encode('hex')) for i, x in enumerate(value))
+    return ":".join("{0}>{1}".format(i, x.encode("hex")) for i, x in enumerate(value))
 
 
 def format_char_positions(value):

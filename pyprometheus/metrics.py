@@ -12,9 +12,12 @@ Prometheus instrumentation library for Python applications
 """
 
 from pyprometheus.const import TYPES
+from pyprometheus.utils import escape_str
 from pyprometheus.values import (MetricValue, GaugeValue,
                                  CounterValue, SummaryValue,
                                  HistogramValue)
+
+
 class BaseMetric(object):
 
     value_class = MetricValue
@@ -93,9 +96,9 @@ class BaseMetric(object):
         """
         return "\n".join(["# HELP {name} {doc}",
                           "# TYPE {name} {metric_type}"]).format(
-                          name=self.name,
-                          doc=self.doc,
-                          metric_type=self.TYPE)
+                              name=escape_str(self.name),
+                              doc=escape_str(self.doc),
+                              metric_type=self.TYPE)
 
     def build_samples(self, items):
         """Build samples from objects

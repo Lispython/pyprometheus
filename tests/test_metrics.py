@@ -13,11 +13,11 @@ from pyprometheus.contrib.uwsgi_features import UWSGIStorage
 def test_base_metric(storage_cls):
     storage = storage_cls()
     registry = BaseRegistry(storage=storage)
-    metric_name = "test_base_metric"
-    metric = BaseMetric(metric_name, "test_base_metric doc", ("label1", "label2"), registry=registry)
+    metric_name = "test_base_metric\x00\\"
+    metric = BaseMetric(metric_name, "test_base_metric doc \u4500", ("label1", "label2"), registry=registry)
 
     assert registry.is_registered(metric)
-    assert repr(metric) == "<BaseMetric[test_base_metric]: 0 samples>"
+    assert repr(metric) == "<BaseMetric[test_base_metric\x00\\]: 0 samples>"
 
     with pytest.raises(RuntimeError) as exc_info:
         registry.register(metric)
@@ -29,7 +29,7 @@ def test_base_metric(storage_cls):
 
         assert str(exc_info.value) == u"Collector {0} already registered.".format(metric.uid)
 
-    labels = metric.labels({"label1": "label1_value", "label2": "label2_value"})
+    labels = metric.labels({"label1\\x\n\"": "label1_value\\x\n\"", "label2": "label2_value\\x\n\""})
 
     assert isinstance(labels, MetricValue)
 
@@ -37,8 +37,10 @@ def test_base_metric(storage_cls):
 
     assert labels.get() == 1
 
-    assert metric.text_export_header == "\n".join(["# HELP test_base_metric test_base_metric doc",
-                                                   "# TYPE test_base_metric untyped"])
+    assert metric.text_export_header == "\n".join(["# HELP test_base_metric\x00\\\\ test_base_metric doc \\\\u4500",
+                                                   "# TYPE test_base_metric\x00\\\\ untyped"])
+
+    assert labels.export_str.split(" ")[:2] == 'test_base_metric\x00\\\\{label1\\\\x\\n\\"="label1_value\\\\x\\n\\"", label2="label2_value\\\\x\\n\\""} 1.0'.split(" ")[:2] # noqa
 
 
 @pytest.mark.parametrize("storage_cls", [LocalMemoryStorage, UWSGIStorage])
