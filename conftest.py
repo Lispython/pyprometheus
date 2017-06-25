@@ -7,10 +7,7 @@ import uwsgi
 import time
 from pyprometheus.storage import BaseStorage
 from pyprometheus.utils import measure_time as measure_time_manager
-try:
-    xrange = xrange
-except Exception:
-    xrange = range
+from pyprometheus.compat import PAD_SYMBOL, xrange
 
 
 @pytest.fixture
@@ -22,7 +19,7 @@ def project_root():
 def run_around_tests():
     m = uwsgi.sharedarea_memoryview(0)
     for x in xrange(len(m)):
-        m[x] = "\x00"
+        m[x] = PAD_SYMBOL
 
     yield
 

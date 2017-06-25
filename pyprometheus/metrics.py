@@ -16,6 +16,7 @@ from pyprometheus.utils import escape_str
 from pyprometheus.values import (MetricValue, GaugeValue,
                                  CounterValue, SummaryValue,
                                  HistogramValue)
+from pyprometheus import compat
 
 
 class BaseMetric(object):
@@ -43,7 +44,8 @@ class BaseMetric(object):
         self._labels_cache = {}
 
     def __repr__(self):
-        return u"<{0}[{1}]: {2} samples>".format(self.__class__.__name__, self._name, len(self._samples))
+        return u"<{0}[{1}]: {2} samples>".format(
+            self.__class__.__name__, self._name, len(self._samples))
 
     def get_proxy(self):
         if self._labelnames:
@@ -94,11 +96,11 @@ class BaseMetric(object):
         # HELP go_gc_duration_seconds A summary of the GC invocation durations.
         # TYPE go_gc_duration_seconds summary
         """
-        return "\n".join(["# HELP {name} {doc}",
-                          "# TYPE {name} {metric_type}"]).format(
-                              name=escape_str(self.name),
-                              doc=escape_str(self.doc),
-                              metric_type=self.TYPE)
+        return u"\n".join([u"# HELP {name} {doc}",
+                           u"# TYPE {name} {metric_type}"]).format(
+                               name=escape_str(self.name),
+                               doc=escape_str(self.doc),
+                               metric_type=self.TYPE)
 
     def build_samples(self, items):
         """Build samples from objects
@@ -114,15 +116,15 @@ class BaseMetric(object):
         """
         return self.value_class(self, label_values=label_values, value=item[0][-1])
 
-
     def add_sample(self, label_values, value):
         self._samples[tuple(sorted(label_values, key=lambda x: x[0]))] = value
 
     def get_samples(self):
         """Get samples from storage
         """
+        if compat.PY3:
+            return list(self._samples.values())
         return self._samples.values()
-
 
     def __getattr__(self, name):
         if name in self.PARENT_METHODS:
@@ -139,7 +141,7 @@ class Gauge(BaseMetric):
     value_class = GaugeValue
 
     PARENT_METHODS = set(("inc", "dec", "set", "get", "track_inprogress",
-                        "set_to_current_time", "time", "value"))
+                          "set_to_current_time", "time", "value"))
 
 
 class Counter(BaseMetric):

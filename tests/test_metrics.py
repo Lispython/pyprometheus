@@ -7,13 +7,14 @@ from pyprometheus.registry import BaseRegistry
 from pyprometheus.values import MetricValue
 from pyprometheus.storage import LocalMemoryStorage
 from pyprometheus.contrib.uwsgi_features import UWSGIStorage
+from pyprometheus import compat
 
 
 @pytest.mark.parametrize("storage_cls", [LocalMemoryStorage, UWSGIStorage])
 def test_base_metric(storage_cls):
     storage = storage_cls()
     registry = BaseRegistry(storage=storage)
-    metric_name = "test_base_metric\x00\\"
+    metric_name = u"test_base_metric\x00\\"
     metric = BaseMetric(metric_name, "test_base_metric doc \u4500", ("label1", "label2"), registry=registry)
 
     assert registry.is_registered(metric)
@@ -37,8 +38,12 @@ def test_base_metric(storage_cls):
 
     assert labels.get() == 1
 
-    assert metric.text_export_header == "\n".join(["# HELP test_base_metric\x00\\\\ test_base_metric doc \\\\u4500",
-                                                   "# TYPE test_base_metric\x00\\\\ untyped"])
+    if compat.PY3:
+        assert metric.text_export_header == u"\n".join([u"# HELP test_base_metric\x00\\\\ test_base_metric doc \u4500",
+                                                        u"# TYPE test_base_metric\x00\\\\ untyped"])
+    else:
+        assert metric.text_export_header == u"\n".join([u"# HELP test_base_metric\x00\\\\ test_base_metric doc \\\\u4500",
+                                                        u"# TYPE test_base_metric\x00\\\\ untyped"])
 
     assert labels.export_str.split(" ")[:2] == 'test_base_metric\x00\\\\{label1\\\\x\\n\\"="label1_value\\\\x\\n\\"", label2="label2_value\\\\x\\n\\""} 1.0'.split(" ")[:2] # noqa
 
