@@ -1,9 +1,11 @@
+setuptools==36.0.1
+
 flake8==3.2.1
 tox==2.3.2
 #tox-pyenv==2.3.2
 
 
-ipdb
+ipdb==0.10.2
 uwsgi==2.0.14
 pytest==3.0.6
 pytest-cov==2.4.0
