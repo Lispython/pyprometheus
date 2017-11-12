@@ -177,6 +177,7 @@ class UWSGIStorage(BaseStorage):
         self._namespace = namespace
         self._stats = stats
         self._labels = tuple(sorted(labels.items(), key=lambda x: x[0]))
+        self._labels_names = tuple(label[0] for label in self._labels)
 
         self._syncs = 0
 
@@ -214,9 +215,9 @@ class UWSGIStorage(BaseStorage):
 
     def declare_metrics(self):
         return {
-            "memory_sync": Counter(self.metric_name("memory_read"), "UWSGI shared memory syncs", ("sharedarea", "id") + self._labels),
-            "memory_size": Gauge(self.metric_name("memory_size"), "UWSGI shared memory size", ("sharedarea", ) + self._labels),
-            "num_keys": Gauge(self.metric_name("num_keys"), "UWSGI num_keys", ("sharedarea", ) + self._labels)
+            "memory_sync": Counter(self.metric_name("memory_read"), "UWSGI shared memory syncs", ("sharedarea", "id") + self._labels_names),
+            "memory_size": Gauge(self.metric_name("memory_size"), "UWSGI shared memory size", ("sharedarea", ) + self._labels_names),
+            "num_keys": Gauge(self.metric_name("num_keys"), "UWSGI num_keys", ("sharedarea", ) + self._labels_names)
         }
 
     def collect(self):
