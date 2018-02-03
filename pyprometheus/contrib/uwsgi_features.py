@@ -612,8 +612,9 @@ class UWSGIFlushStorage(LocalMemoryStorage):
     """
     SHAREDAREA_ID = int(os.environ.get("PROMETHEUS_UWSGI_SHAREDAREA", 0))
 
-    def __init__(self, sharedarea_id=UWSGIStorage.SHAREDAREA_ID, namespace="", stats=False, labels={}):
-        self._uwsgi_storage = UWSGIStorage(sharedarea_id, namespace=namespace, stats=stats, labels=labels)
+    def __init__(self, sharedarea_id=UWSGIStorage.SHAREDAREA_ID, namespace="",
+                 stats=False, labels={}, storage_class=UWSGIStorage):
+        self._uwsgi_storage = storage_class(sharedarea_id, namespace=namespace, stats=stats, labels=labels)
         self._flush = 0
         self._get_items = 0
         self._clear = 0
