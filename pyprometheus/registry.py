@@ -36,12 +36,15 @@ class BaseRegistry(object):
         """
         self._collectors.pop(collector.uid, None)
 
-    def collect(self):
+    def collect(self, clean=True):
         """Get all metrics from all registered collectos
         """
         data = dict(self._storage.items())
 
         for uid, collector in self.collectors():
+            if clean and hasattr(collector, 'clear_samples'):
+                collector.clear_samples()
+
             # Collectors with collect method already have stats
             if hasattr(collector, 'collect'):
                 for item in collector.collect():

@@ -109,6 +109,9 @@ class BaseMetric(object):
             self.add_sample(label_values, self.build_sample(label_values, data))
         return self
 
+    def clear_samples(self):
+        self._samples.clear()
+
     def build_sample(self, label_values, item):
         """Build value object from given data
         """
