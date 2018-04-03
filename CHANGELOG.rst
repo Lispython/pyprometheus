@@ -1,3 +1,9 @@
+Version 0.0.9
+-------------
+
+* [BUGFIX] Fixed metric samples caching
+
+
 Version 0.0.8
 -------------
 
