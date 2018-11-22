@@ -12,7 +12,6 @@ Prometheus instrumentation library for Python applications
 """
 
 
-
 class BaseRegistry(object):
     """Link with metrics collectors
     """
@@ -46,7 +45,7 @@ class BaseRegistry(object):
                 collector.clear_samples()
 
             # Collectors with collect method already have stats
-            if hasattr(collector, 'collect'):
+            if hasattr(collector, "collect"):
                 for item in collector.collect():
                     yield item
             else:

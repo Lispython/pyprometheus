@@ -2,16 +2,17 @@
 # -*- coding: utf-8 -*-
 import os
 import random
+import marshal
 from multiprocessing import Process
 
 import uwsgi
 from pyprometheus.contrib.uwsgi_features import UWSGICollector, UWSGIStorage, UWSGIFlushStorage
 from pyprometheus.registry import BaseRegistry
 from pyprometheus.utils.exposition import registry_to_text
-try:
-    xrange = xrange
-except Exception:
-    xrange = range
+from pyprometheus import compat
+from pyprometheus.utils import get_padded_string_len
+
+xrange = compat.xrange
 
 
 def test_uwsgi_collector():
@@ -72,7 +73,7 @@ def test_uwsgi_storage():
 
     assert (storage.get_area_size()) == 14
 
-    assert storage.m[15] == "\x00"
+    assert storage.m[15] == compat.PAD_SYMBOL
 
     with storage.lock():
 
@@ -95,22 +96,23 @@ def test_uwsgi_storage():
 
     assert area_sign == storage2.get_area_sign()
 
-    storage.m[storage.SIGN_POSITION + 2] = os.urandom(1)
+    storage.m[storage.SIGN_POSITION + 2:storage.SIGN_POSITION + 2 + storage.SIGN_SIZE] = os.urandom(storage.SIGN_SIZE)
 
     assert not storage.is_actual
 
     s = "keyname"
-    assert storage.get_string_padding(s) == 5
 
-    assert len(s.encode("utf-8")) + storage.get_string_padding(s) == 12
+    assert storage.get_string_padding(s) == 1
+
+    assert len(s.encode("utf-8")) + storage.get_string_padding(s) == 8
 
     assert storage.validate_actuality()
 
     assert storage.is_actual
 
-    assert storage.get_key_position("keyname") == ([14, 18, 25, 33], True)
+    assert storage.get_key_position("keyname") == ([14, 18, 26, 34], True)
 
-    assert (storage.get_area_size()) == 33
+    assert (storage.get_area_size()) == 34
 
     assert storage.get_key_size("keyname") == 24
 
@@ -128,22 +130,28 @@ def test_uwsgi_storage():
 
     storage.write_value(DATA[0][0], DATA[0][1])
 
-    assert storage.get_key_size(DATA[0][0]) == 108
+    # len of marshaled string depending of python version
+    assert storage.get_key_size(DATA[0][0]) == get_padded_string_len(marshal.dumps(DATA[0][0])) + storage.KEY_SIZE_SIZE + storage.KEY_VALUE_SIZE
 
-    assert storage.get_area_size() == 122 == storage2.get_area_size()
+    # meta header size + first key size
+    l = 14 + get_padded_string_len(marshal.dumps(DATA[0][0])) + storage.KEY_SIZE_SIZE + storage.KEY_VALUE_SIZE
+    assert storage.get_area_size() == l == storage2.get_area_size()
 
     assert storage2.get_value(DATA[0][0]) == DATA[0][1] == storage.get_value(DATA[0][0])
+
+    total_size = storage.AREA_SIZE_SIZE + storage.AREA_SIZE_POSITION + storage.SIGN_SIZE
 
     for x in DATA:
         storage.write_value(x[0], x[1])
         assert storage.get_value(x[0]) == x[1]
+        total_size += get_padded_string_len(marshal.dumps(x[0])) + storage.KEY_SIZE_SIZE + storage.KEY_VALUE_SIZE
 
     for x in DATA:
         assert storage.get_value(x[0]) == x[1]
 
     assert len(storage) == len(DATA) == 20
 
-    assert storage.get_area_size() == 2531
+    assert storage.get_area_size() == total_size
     assert not storage2.is_actual
 
     assert storage.is_actual

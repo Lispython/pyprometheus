@@ -48,6 +48,7 @@ test: clean-containers
 
 tox: clean-containers
 	@echo "Tox test application $(version)"
+	rm -rf ./.tox
 	$(DOCKER_RUN_COMMAND) "tox"
 	@echo ""
 

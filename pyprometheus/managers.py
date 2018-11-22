@@ -16,6 +16,7 @@ from functools import wraps
 
 default_timer = time.time
 
+
 class BaseManager(object):
     def __call__(self, f):
         @wraps(f)

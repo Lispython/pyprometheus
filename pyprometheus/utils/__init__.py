@@ -13,6 +13,7 @@ Prometheus instrumentation library for Python applications
 import sys
 import time
 
+from pyprometheus import compat
 
 def import_storage(path):
     try:
@@ -24,7 +25,7 @@ def import_storage(path):
 
 
 def escape_str(value):
-    return value.replace("\\", r"\\").replace("\n", r"\n").replace("\"", r"\"")
+    return compat.u(value).replace("\\", r"\\").replace("\n", r"\n").replace("\"", r"\"")
 
 
 def format_binary(value):
@@ -42,7 +43,7 @@ def print_binary(value):
 
 
 class measure_time(object):
-    def __init__(self,name):
+    def __init__(self, name):
         self.name = name
         self._num_ops = 0
 
@@ -50,12 +51,20 @@ class measure_time(object):
         self.start = time.time()
         return self
 
-    def __exit__(self,ty,val,tb):
+    def __exit__(self, exc_type, exc_value, traceback):
         end = time.time()
         print("{0} : {1:.4f} seconds for {2} ops [{3:.4f} / s]".format(
-            self.name, end-self.start,
-            self._num_ops, self._num_ops / (end-self.start)))
+            self.name, end - self.start,
+            self._num_ops, self._num_ops / (end - self.start)))
         return False
 
     def set_num_ops(self, value):
         self._num_ops = value
+
+
+def get_string_padding(s, size=4):
+    return (size - (len(s) % size)) % size
+
+
+def get_padded_string_len(s, size=4):
+    return len(s) + get_string_padding(s, size)

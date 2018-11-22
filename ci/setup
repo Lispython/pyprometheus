@@ -2,6 +2,11 @@
 
 pip install "pip>=8.1"
 
+if [ "$UWSGI" = "" ]
+then
+   UWSGI="2.0.15"
+fi
+
 pip install "uwsgi==$UWSGI"
 
 pip install -U -r tests_requirements.txt
