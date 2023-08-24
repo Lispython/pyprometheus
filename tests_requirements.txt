@@ -4,7 +4,7 @@ tox==2.3.2
 
 
 ipdb
-uwsgi==2.0.14
+uwsgi==2.0.22
 pytest==3.0.6
 pytest-cov==2.4.0
 pytest-flake8==0.8.1
